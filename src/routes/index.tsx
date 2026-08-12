@@ -309,7 +309,14 @@ function useThread(conversationId: string | null) {
         },
         (payload) => {
           const msg = payload.new as Message;
-          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            const withoutOptimistic = prev.filter(
+              (m) =>
+                !(m.id.startsWith("tmp-") && m.sender === msg.sender && m.content === msg.content),
+            );
+            return [...withoutOptimistic, msg];
+          });
         },
       )
       .subscribe();
