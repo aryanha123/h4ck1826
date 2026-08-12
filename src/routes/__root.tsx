@@ -77,10 +77,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Our Private Chat" },
-      { name: "description", content: "A private chat room for two." },
-      { property: "og:title", content: "Our Private Chat" },
-      { property: "og:description", content: "A private chat room for two." },
+      { title: "NOCTURNE — Direct Line" },
+      { name: "description", content: "Drop your name and open a private direct line." },
+      { property: "og:title", content: "NOCTURNE — Direct Line" },
+      { property: "og:description", content: "Drop your name and open a private direct line." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -90,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Outfit:wght@300;400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap",
       },
       {
         rel: "stylesheet",
