@@ -419,7 +419,7 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 
   return (
     <Shell
-      title="Direct Line"
+      title="faded mind"
       subtitle={`You are ${name}`}
       left={
         <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
