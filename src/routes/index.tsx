@@ -220,7 +220,7 @@ function Chat({ me, onExit }: { me: Sender; onExit: () => void }) {
                 <button
                   onClick={() => remove(m.id)}
                   aria-label="Delete message"
-                  className="opacity-0 transition group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                  className="p-1 text-muted-foreground/50 transition hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
