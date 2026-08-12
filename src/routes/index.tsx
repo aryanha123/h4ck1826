@@ -226,23 +226,25 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
       onSubmit={submit}
       className="flex shrink-0 items-center gap-2 border-t border-border bg-card/50 px-3 py-3 backdrop-blur-xl"
     >
+      <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-input/70 px-2 py-1 backdrop-blur-xl transition focus-within:border-foreground/50 focus-within:[box-shadow:0_0_0_4px_oklch(1_0_0/8%)]">
       <input
         ref={inputRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Message…"
+        placeholder="type something…"
         maxLength={2000}
         aria-label="Message"
-        className="flex-1 rounded-full border border-border bg-input px-4 py-3 outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/25"
+        className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
       <button
         type="submit"
         disabled={!text.trim() || disabled}
         aria-label="Send"
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
       >
         <Send className="h-5 w-5" />
       </button>
+      </div>
     </form>
   );
 }
