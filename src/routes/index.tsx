@@ -195,7 +195,7 @@ function Shell({
       <header className="flex items-center gap-3 border-b border-border bg-card/40 px-4 py-3 backdrop-blur-xl">
         {left}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-[family-name:var(--font-mono)] text-base tracking-[0.2em] uppercase">
+          <h1 className="truncate font-[family-name:var(--font-mono)] text-base tracking-[0.2em] lowercase">
             {title}
           </h1>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
