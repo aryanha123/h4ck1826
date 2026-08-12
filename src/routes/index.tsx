@@ -1,29 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, LogOut, MessageSquare, Send, ShieldHalf } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Send, Ghost } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
+import { GhostRain } from "@/components/GhostRain";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NOCTURNE — Direct Line" },
+      { title: "faded mind — private direct line" },
       {
         name: "description",
         content:
-          "Drop your name and open a private direct line. Your thread stays yours — nobody else can see it.",
+          "Drop your name and open a private direct line inside faded mind. Your thread stays yours — nobody else can see it.",
       },
-      { property: "og:title", content: "NOCTURNE — Direct Line" },
+      { property: "og:title", content: "faded mind — private direct line" },
       {
         property: "og:description",
-        content: "Drop your name and open a private direct line.",
+        content: "Drop your name and open a private direct line inside faded mind.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
 });
 
-const OWNER_CODE = "HA";
+const OWNER_CODE = "@HAROONHA1008";
 const STORE_KEY = "nocturne-name";
 
 type Sender = "guest" | "owner";
@@ -90,6 +93,7 @@ function Index() {
     <>
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
+      <GhostRain />
       {!ready ? (
         <div className="min-h-screen" />
       ) : mode === "gate" ? (
@@ -122,19 +126,20 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
       <div className="w-full max-w-md anim-rise">
         <div className="flex justify-center">
           <span className="anim-pulse-ring flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl">
-            <ShieldHalf className="h-7 w-7" />
+            <Ghost className="h-7 w-7" />
           </span>
         </div>
-        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold tracking-[0.35em] anim-flicker">
-          NOCTURNE
+        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold lowercase tracking-[0.22em] text-sheen anim-flicker">
+          faded mind
         </h1>
         <p className="mt-3 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          direct line // encrypted vibes only
+          private line // no one else is watching
         </p>
 
         <form
           onSubmit={submit}
-          className="mt-10 rounded-3xl border border-border bg-card/40 p-6 backdrop-blur-xl [box-shadow:var(--shadow-soft)]"
+          className="glass-panel anim-drop mt-10 rounded-3xl p-6"
+          style={{ animationDelay: "120ms" }}
         >
           <label
             htmlFor="gate-name"
@@ -190,7 +195,7 @@ function Shell({
       <header className="flex items-center gap-3 border-b border-border bg-card/40 px-4 py-3 backdrop-blur-xl">
         {left}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-[family-name:var(--font-mono)] text-base tracking-[0.2em] uppercase">
+          <h1 className="truncate font-[family-name:var(--font-mono)] text-base tracking-[0.2em] lowercase">
             {title}
           </h1>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
@@ -221,23 +226,25 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
       onSubmit={submit}
       className="flex shrink-0 items-center gap-2 border-t border-border bg-card/50 px-3 py-3 backdrop-blur-xl"
     >
+      <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-input/70 px-2 py-1 backdrop-blur-xl transition focus-within:border-foreground/50 focus-within:[box-shadow:0_0_0_4px_oklch(1_0_0/8%)]">
       <input
         ref={inputRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Message…"
+        placeholder="type something…"
         maxLength={2000}
         aria-label="Message"
-        className="flex-1 rounded-full border border-border bg-input px-4 py-3 outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/25"
+        className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
       <button
         type="submit"
         disabled={!text.trim() || disabled}
         aria-label="Send"
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
       >
         <Send className="h-5 w-5" />
       </button>
+      </div>
     </form>
   );
 }
@@ -412,7 +419,7 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 
   return (
     <Shell
-      title="Direct Line"
+      title="faded mind"
       subtitle={`You are ${name}`}
       left={
         <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
