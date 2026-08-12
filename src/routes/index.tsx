@@ -126,19 +126,20 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
       <div className="w-full max-w-md anim-rise">
         <div className="flex justify-center">
           <span className="anim-pulse-ring flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl">
-            <ShieldHalf className="h-7 w-7" />
+            <Ghost className="h-7 w-7" />
           </span>
         </div>
-        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold tracking-[0.35em] anim-flicker">
-          NOCTURNE
+        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold lowercase tracking-[0.22em] text-sheen anim-flicker">
+          faded mind
         </h1>
         <p className="mt-3 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          direct line // encrypted vibes only
+          private line // no one else is watching
         </p>
 
         <form
           onSubmit={submit}
-          className="mt-10 rounded-3xl border border-border bg-card/40 p-6 backdrop-blur-xl [box-shadow:var(--shadow-soft)]"
+          className="glass-panel anim-drop mt-10 rounded-3xl p-6"
+          style={{ animationDelay: "120ms" }}
         >
           <label
             htmlFor="gate-name"
