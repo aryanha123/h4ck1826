@@ -1,0 +1,1 @@
+DELETE FROM public.conversations WHERE name IN ('Rahul Test','Rahul Two','Rahul Three','Zed One','Neha Sky');
