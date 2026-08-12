@@ -1,29 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, LogOut, MessageSquare, Send, ShieldHalf } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Send, Ghost } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
+import { GhostRain } from "@/components/GhostRain";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NOCTURNE — Direct Line" },
+      { title: "faded mind — private direct line" },
       {
         name: "description",
         content:
-          "Drop your name and open a private direct line. Your thread stays yours — nobody else can see it.",
+          "Drop your name and open a private direct line inside faded mind. Your thread stays yours — nobody else can see it.",
       },
-      { property: "og:title", content: "NOCTURNE — Direct Line" },
+      { property: "og:title", content: "faded mind — private direct line" },
       {
         property: "og:description",
-        content: "Drop your name and open a private direct line.",
+        content: "Drop your name and open a private direct line inside faded mind.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
 });
 
-const OWNER_CODE = "HA";
+const OWNER_CODE = "@HAROONHA1008";
 const STORE_KEY = "nocturne-name";
 
 type Sender = "guest" | "owner";
@@ -90,6 +93,7 @@ function Index() {
     <>
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
+      <GhostRain />
       {!ready ? (
         <div className="min-h-screen" />
       ) : mode === "gate" ? (
