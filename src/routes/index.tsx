@@ -331,11 +331,28 @@ function useThread(conversationId: string | null) {
 }
 
 async function sendMessage(conversationId: string, sender: Sender, content: string) {
-  await supabase.from("messages").insert({ conversation_id: conversationId, sender, content });
+  const { data } = await supabase
+    .from("messages")
+    .insert({ conversation_id: conversationId, sender, content })
+    .select()
+    .maybeSingle();
   await supabase
     .from("conversations")
     .update({ last_message_at: new Date().toISOString() })
     .eq("id", conversationId);
+  return (data as Message | null) ?? null;
+}
+
+function replaceOptimistic(
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
+  tmpId: string,
+  row: Message | null,
+) {
+  setMessages((prev) => {
+    const without = prev.filter((m) => m.id !== tmpId);
+    if (!row || without.some((m) => m.id === row.id)) return without;
+    return [...without, row];
+  });
 }
 
 function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
@@ -378,15 +395,17 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
   const send = useCallback(
     async (text: string) => {
       if (!convoId) return;
+      const tmpId = `tmp-${Date.now()}`;
       const optimistic: Message = {
-        id: `tmp-${Date.now()}`,
+        id: tmpId,
         conversation_id: convoId,
         sender: "guest",
         content: text,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, optimistic]);
-      await sendMessage(convoId, "guest", text);
+      const row = await sendMessage(convoId, "guest", text);
+      replaceOptimistic(setMessages, tmpId, row);
     },
     [convoId, setMessages],
   );
@@ -452,15 +471,17 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
   const send = useCallback(
     async (text: string) => {
       if (!activeId) return;
+      const tmpId = `tmp-${Date.now()}`;
       const optimistic: Message = {
-        id: `tmp-${Date.now()}`,
+        id: tmpId,
         conversation_id: activeId,
         sender: "owner",
         content: text,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, optimistic]);
-      await sendMessage(activeId, "owner", text);
+      const row = await sendMessage(activeId, "owner", text);
+      replaceOptimistic(setMessages, tmpId, row);
     },
     [activeId, setMessages],
   );
