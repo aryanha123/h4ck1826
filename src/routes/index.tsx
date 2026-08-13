@@ -1,23 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, LogOut, MessageSquare, Send, Ghost } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Send, Ghost, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
+import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "faded mind — private direct line" },
+      { title: "HAROON H4CK — private direct line" },
       {
         name: "description",
         content:
-          "Drop your name and open a private direct line inside faded mind. Your thread stays yours — nobody else can see it.",
+          "Drop your name and open an encrypted private direct line with HAROON H4CK. Your thread stays yours — nobody else can see it.",
       },
-      { property: "og:title", content: "faded mind — private direct line" },
+      { property: "og:title", content: "HAROON H4CK — private direct line" },
       {
         property: "og:description",
-        content: "Drop your name and open a private direct line inside faded mind.",
+        content: "Drop your name and open an encrypted private direct line with HAROON H4CK.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const OWNER_CODE = "@HAROONHA1008";
+const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
 
 type Sender = "guest" | "owner";
