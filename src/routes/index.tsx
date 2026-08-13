@@ -1,23 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, LogOut, MessageSquare, Send, Ghost } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
+import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "faded mind — private direct line" },
+      { title: "HAROON H4CK — private direct line" },
       {
         name: "description",
         content:
-          "Drop your name and open a private direct line inside faded mind. Your thread stays yours — nobody else can see it.",
+          "Drop your name and open an encrypted private direct line with HAROON H4CK. Your thread stays yours — nobody else can see it.",
       },
-      { property: "og:title", content: "faded mind — private direct line" },
+      { property: "og:title", content: "HAROON H4CK — private direct line" },
       {
         property: "og:description",
-        content: "Drop your name and open a private direct line inside faded mind.",
+        content: "Drop your name and open an encrypted private direct line with HAROON H4CK.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const OWNER_CODE = "@HAROONHA1008";
+const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
 
 type Sender = "guest" | "owner";
@@ -93,6 +94,17 @@ function Index() {
     <>
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="anim-aura absolute -left-24 top-[-10%] h-[46vh] w-[46vh] rounded-full bg-[oklch(0.68_0.24_300/25%)] blur-[90px]" />
+        <div
+          className="anim-aura absolute -right-20 top-1/3 h-[40vh] w-[40vh] rounded-full bg-[oklch(0.82_0.16_200/22%)] blur-[90px]"
+          style={{ animationDelay: "2.5s" }}
+        />
+        <div
+          className="anim-aura absolute bottom-[-15%] left-1/4 h-[42vh] w-[42vh] rounded-full bg-[oklch(0.72_0.24_350/20%)] blur-[100px]"
+          style={{ animationDelay: "5s" }}
+        />
+      </div>
       <GhostRain />
       {!ready ? (
         <div className="min-h-screen" />
@@ -125,16 +137,37 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
     <main className="flex min-h-screen items-center justify-center px-5">
       <div className="w-full max-w-md anim-rise">
         <div className="flex justify-center">
-          <span className="anim-pulse-ring flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl">
-            <Ghost className="h-7 w-7" />
+          <span className="anim-pulse-ring neon-ring relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-border bg-foreground/5 backdrop-blur-xl">
+            <img
+              src={dp.url}
+              alt="HAROON H4CK profile"
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
           </span>
         </div>
-        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold lowercase tracking-[0.22em] text-sheen anim-flicker">
-          faded mind
+        <h1 className="anim-glitch-in mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold uppercase tracking-[0.22em] text-sheen">
+          HAROON H4CK
         </h1>
-        <p className="mt-3 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          private line // no one else is watching
+        <p
+          className="anim-rise mt-3 text-center font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.3em] text-muted-foreground"
+          style={{ animationDelay: "260ms" }}
+        >
+          encrypted direct line // trace nahi hoga, delete nahi hoga
         </p>
+        <div
+          className="anim-rise mt-4 flex flex-wrap justify-center gap-2"
+          style={{ animationDelay: "340ms" }}
+        >
+          {["1:1 private", "history saved", "no one else sees"].map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-border bg-foreground/5 px-3 py-1 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-xl"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
 
         <form
           onSubmit={submit}
@@ -170,6 +203,12 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
             Same name reopens your old chat. Nothing ever gets deleted.
           </p>
         </form>
+        <p
+          className="anim-rise mt-6 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70"
+          style={{ animationDelay: "420ms" }}
+        >
+          developed by haroon
+        </p>
       </div>
     </main>
   );
@@ -232,7 +271,7 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="type something…"
-        maxLength={2000}
+        maxLength={8000}
         aria-label="Message"
         className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
@@ -419,11 +458,11 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 
   return (
     <Shell
-      title="faded mind"
+      title="HAROON H4CK"
       subtitle={`You are ${name}`}
       left={
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
-          {initials(name)}
+        <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
+          <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
         </span>
       }
       right={
@@ -475,6 +514,17 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
     [convos, activeId],
   );
 
+  const deleteThread = useCallback(
+    async (id: string, label: string) => {
+      if (!window.confirm(`Delete the whole chat with ${label}? This cannot be undone.`)) return;
+      await supabase.from("messages").delete().eq("conversation_id", id);
+      await supabase.from("conversations").delete().eq("id", id);
+      setConvos((prev) => prev.filter((c) => c.id !== id));
+      setActiveId((cur) => (cur === id ? null : cur));
+    },
+    [],
+  );
+
   const send = useCallback(
     async (text: string) => {
       if (!activeId) return;
@@ -505,6 +555,15 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
             className="rounded-full p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
+          </button>
+        }
+        right={
+          <button
+            onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
+            aria-label="Delete this chat"
+            className="rounded-full p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+          >
+            <Trash2 className="h-5 w-5" />
           </button>
         }
         footer={<Composer onSend={send} />}
@@ -540,23 +599,37 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
           </p>
         )}
         {convos.map((c, i) => (
-          <button
+          <div
             key={c.id}
-            onClick={() => setActiveId(c.id)}
             style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
-            className="anim-rise flex w-full items-center gap-3 rounded-2xl border border-border bg-card/40 px-4 py-3 text-left backdrop-blur-xl transition hover:border-foreground/40 hover:bg-card/70"
+            className="anim-rise flex w-full items-center gap-2 rounded-2xl border border-border bg-card/40 px-3 py-3 backdrop-blur-xl transition hover:border-foreground/40 hover:bg-card/70"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
-              {initials(c.name)}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">{c.name}</span>
-              <span className="block text-xs text-muted-foreground">
-                last activity {time(c.last_message_at)}
+            <button
+              onClick={() => setActiveId(c.id)}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
+                {initials(c.name)}
               </span>
-            </span>
-          </button>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{c.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  last activity {time(c.last_message_at)}
+                </span>
+              </span>
+            </button>
+            <button
+              onClick={() => deleteThread(c.id, c.name)}
+              aria-label={`Delete chat with ${c.name}`}
+              className="rounded-full p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         ))}
+        <p className="pt-4 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70">
+          developed by haroon
+        </p>
       </div>
     </Shell>
   );
