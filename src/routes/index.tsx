@@ -514,6 +514,17 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
     [convos, activeId],
   );
 
+  const deleteThread = useCallback(
+    async (id: string, label: string) => {
+      if (!window.confirm(`Delete the whole chat with ${label}? This cannot be undone.`)) return;
+      await supabase.from("messages").delete().eq("conversation_id", id);
+      await supabase.from("conversations").delete().eq("id", id);
+      setConvos((prev) => prev.filter((c) => c.id !== id));
+      setActiveId((cur) => (cur === id ? null : cur));
+    },
+    [],
+  );
+
   const send = useCallback(
     async (text: string) => {
       if (!activeId) return;
@@ -544,6 +555,15 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
             className="rounded-full p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
+          </button>
+        }
+        right={
+          <button
+            onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
+            aria-label="Delete this chat"
+            className="rounded-full p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+          >
+            <Trash2 className="h-5 w-5" />
           </button>
         }
         footer={<Composer onSend={send} />}
