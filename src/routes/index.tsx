@@ -599,23 +599,37 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
           </p>
         )}
         {convos.map((c, i) => (
-          <button
+          <div
             key={c.id}
-            onClick={() => setActiveId(c.id)}
             style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
-            className="anim-rise flex w-full items-center gap-3 rounded-2xl border border-border bg-card/40 px-4 py-3 text-left backdrop-blur-xl transition hover:border-foreground/40 hover:bg-card/70"
+            className="anim-rise flex w-full items-center gap-2 rounded-2xl border border-border bg-card/40 px-3 py-3 backdrop-blur-xl transition hover:border-foreground/40 hover:bg-card/70"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
-              {initials(c.name)}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">{c.name}</span>
-              <span className="block text-xs text-muted-foreground">
-                last activity {time(c.last_message_at)}
+            <button
+              onClick={() => setActiveId(c.id)}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
+                {initials(c.name)}
               </span>
-            </span>
-          </button>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{c.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  last activity {time(c.last_message_at)}
+                </span>
+              </span>
+            </button>
+            <button
+              onClick={() => deleteThread(c.id, c.name)}
+              aria-label={`Delete chat with ${c.name}`}
+              className="rounded-full p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+            >
+              <Trash2 className="h-4.5 w-4.5" />
+            </button>
+          </div>
         ))}
+        <p className="pt-4 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70">
+          developed by haroon
+        </p>
       </div>
     </Shell>
   );
