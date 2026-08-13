@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, LogOut, MessageSquare, Send, Ghost, Trash2 } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
@@ -623,7 +623,7 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
               aria-label={`Delete chat with ${c.name}`}
               className="rounded-full p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
             >
-              <Trash2 className="h-4.5 w-4.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ))}
