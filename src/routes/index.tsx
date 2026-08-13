@@ -94,6 +94,17 @@ function Index() {
     <>
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="anim-aura absolute -left-24 top-[-10%] h-[46vh] w-[46vh] rounded-full bg-[oklch(0.68_0.24_300/25%)] blur-[90px]" />
+        <div
+          className="anim-aura absolute -right-20 top-1/3 h-[40vh] w-[40vh] rounded-full bg-[oklch(0.82_0.16_200/22%)] blur-[90px]"
+          style={{ animationDelay: "2.5s" }}
+        />
+        <div
+          className="anim-aura absolute bottom-[-15%] left-1/4 h-[42vh] w-[42vh] rounded-full bg-[oklch(0.72_0.24_350/20%)] blur-[100px]"
+          style={{ animationDelay: "5s" }}
+        />
+      </div>
       <GhostRain />
       {!ready ? (
         <div className="min-h-screen" />
@@ -126,16 +137,37 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
     <main className="flex min-h-screen items-center justify-center px-5">
       <div className="w-full max-w-md anim-rise">
         <div className="flex justify-center">
-          <span className="anim-pulse-ring flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl">
-            <Ghost className="h-7 w-7" />
+          <span className="anim-pulse-ring neon-ring relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-border bg-foreground/5 backdrop-blur-xl">
+            <img
+              src={dp.url}
+              alt="HAROON H4CK profile"
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
           </span>
         </div>
-        <h1 className="mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold lowercase tracking-[0.22em] text-sheen anim-flicker">
-          faded mind
+        <h1 className="anim-glitch-in mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold uppercase tracking-[0.22em] text-sheen">
+          HAROON H4CK
         </h1>
-        <p className="mt-3 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          private line // no one else is watching
+        <p
+          className="anim-rise mt-3 text-center font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.3em] text-muted-foreground"
+          style={{ animationDelay: "260ms" }}
+        >
+          encrypted direct line // trace nahi hoga, delete nahi hoga
         </p>
+        <div
+          className="anim-rise mt-4 flex flex-wrap justify-center gap-2"
+          style={{ animationDelay: "340ms" }}
+        >
+          {["1:1 private", "history saved", "no one else sees"].map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-border bg-foreground/5 px-3 py-1 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-xl"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
 
         <form
           onSubmit={submit}
@@ -171,6 +203,12 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
             Same name reopens your old chat. Nothing ever gets deleted.
           </p>
         </form>
+        <p
+          className="anim-rise mt-6 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70"
+          style={{ animationDelay: "420ms" }}
+        >
+          developed by haroon
+        </p>
       </div>
     </main>
   );
