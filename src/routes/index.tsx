@@ -271,7 +271,7 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="type something…"
-        maxLength={2000}
+        maxLength={8000}
         aria-label="Message"
         className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
@@ -458,11 +458,11 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 
   return (
     <Shell
-      title="faded mind"
+      title="HAROON H4CK"
       subtitle={`You are ${name}`}
       left={
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
-          {initials(name)}
+        <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
+          <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
         </span>
       }
       right={
