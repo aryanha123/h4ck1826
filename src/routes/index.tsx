@@ -4,6 +4,9 @@ import { ArrowLeft, LogOut, MessageSquare, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
+import { Splash } from "@/components/Splash";
+import { InstallApp } from "@/components/InstallApp";
+import { askNotificationPermission, pushNotice, registerServiceWorker, vibrate } from "@/lib/pwa";
 import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -29,6 +32,11 @@ export const Route = createFileRoute("/")({
 
 const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
+const SEEN_KEY = "h4ck-last-seen";
+/** Per-thread capacity. Beyond this the oldest messages roll off automatically. */
+const MAX_MESSAGES = 4000;
+const TRIM_TO = 3000;
+const MAX_CHARS = 20000;
 
 type Sender = "guest" | "owner";
 type Message = {
@@ -70,6 +78,7 @@ function Index() {
       setMode("guest");
     }
     setReady(true);
+    registerServiceWorker();
   }, []);
 
   const enter = (raw: string) => {
@@ -92,6 +101,7 @@ function Index() {
 
   return (
     <>
+      <Splash />
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
