@@ -4,6 +4,9 @@ import { ArrowLeft, LogOut, MessageSquare, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
+import { Splash } from "@/components/Splash";
+import { InstallApp } from "@/components/InstallApp";
+import { askNotificationPermission, pushNotice, registerServiceWorker, vibrate } from "@/lib/pwa";
 import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -29,6 +32,11 @@ export const Route = createFileRoute("/")({
 
 const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
+const SEEN_KEY = "h4ck-last-seen";
+/** Per-thread capacity. Beyond this the oldest messages roll off automatically. */
+const MAX_MESSAGES = 4000;
+const TRIM_TO = 3000;
+const MAX_CHARS = 20000;
 
 type Sender = "guest" | "owner";
 type Message = {
@@ -70,6 +78,7 @@ function Index() {
       setMode("guest");
     }
     setReady(true);
+    registerServiceWorker();
   }, []);
 
   const enter = (raw: string) => {
@@ -92,6 +101,7 @@ function Index() {
 
   return (
     <>
+      <Splash />
       <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
@@ -203,6 +213,9 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
             Same name reopens your old chat. Nothing ever gets deleted.
           </p>
         </form>
+        <div className="mt-6 flex justify-center">
+          <InstallApp />
+        </div>
         <p
           className="anim-rise mt-6 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70"
           style={{ animationDelay: "420ms" }}
@@ -271,7 +284,7 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="type something…"
-        maxLength={8000}
+        maxLength={MAX_CHARS}
         aria-label="Message"
         className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
@@ -288,7 +301,15 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
   );
 }
 
-function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
+function Thread({
+  messages,
+  mineIs,
+  notice,
+}: {
+  messages: Message[];
+  mineIs: Sender;
+  notice?: string | null;
+}) {
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -296,6 +317,13 @@ function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
 
   return (
     <div className="flex-1 space-y-3 overflow-y-auto px-4 py-6">
+      {notice && (
+        <div className="anim-soft-in glass-panel sticky top-0 z-10 mx-auto mb-2 max-w-[92%] rounded-2xl px-4 py-2.5 text-center">
+          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase leading-relaxed tracking-[0.18em] text-muted-foreground">
+            {notice}
+          </p>
+        </div>
+      )}
       {messages.length === 0 && (
         <p className="mt-20 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.25em] text-muted-foreground">
           no signal yet — say something
@@ -325,8 +353,9 @@ function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
   );
 }
 
-function useThread(conversationId: string | null) {
+function useThread(conversationId: string | null, mineIs: Sender) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!conversationId) {
@@ -339,8 +368,26 @@ function useThread(conversationId: string | null) {
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (active && data) setMessages(data as Message[]);
+      .then(async ({ data }) => {
+        if (!active || !data) return;
+        const rows = data as Message[];
+        if (rows.length <= MAX_MESSAGES) {
+          setMessages(rows);
+          return;
+        }
+        const cut = rows.length - TRIM_TO;
+        const stale = rows.slice(0, cut);
+        setMessages(rows.slice(cut));
+        setNotice(
+          `chat full ho gayi thi — sabse purane ${cut} message auto-clear kiye gaye. neeche wali chat safe hai, aap continue kar sakte ho.`,
+        );
+        await supabase
+          .from("messages")
+          .delete()
+          .in(
+            "id",
+            stale.map((m) => m.id),
+          );
       });
 
     const channel = supabase
@@ -355,6 +402,10 @@ function useThread(conversationId: string | null) {
         },
         (payload) => {
           const msg = payload.new as Message;
+          if (msg.sender !== mineIs) {
+            vibrate();
+            pushNotice("H4CK", "You have a new message", `h4ck-${conversationId}`);
+          }
           setMessages((prev) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
             const withoutOptimistic = prev.filter(
@@ -371,9 +422,9 @@ function useThread(conversationId: string | null) {
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, mineIs]);
 
-  return { messages, setMessages };
+  return { messages, setMessages, notice, setNotice };
 }
 
 async function sendMessage(conversationId: string, sender: Sender, content: string) {
@@ -403,7 +454,24 @@ function replaceOptimistic(
 
 function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
   const [convoId, setConvoId] = useState<string | null>(null);
-  const { messages, setMessages } = useThread(convoId);
+  const { messages, setMessages, notice, setNotice } = useThread(convoId, "guest");
+
+  useEffect(() => {
+    askNotificationPermission();
+  }, []);
+
+  // "You have new messages" hint when re-opening the app, without revealing content.
+  useEffect(() => {
+    if (!messages.length) return;
+    const seen = window.localStorage.getItem(SEEN_KEY);
+    const unseen = messages.filter((m) => m.sender === "owner" && (!seen || m.created_at > seen));
+    if (unseen.length && !notice) {
+      setNotice(`aapke liye ${unseen.length} naya message aaya hai`);
+    }
+    const last = messages[messages.length - 1];
+    if (last) window.localStorage.setItem(SEEN_KEY, last.created_at);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
 
   useEffect(() => {
     let active = true;
@@ -476,7 +544,7 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
       }
       footer={<Composer onSend={send} disabled={!convoId} />}
     >
-      <Thread messages={messages} mineIs="guest" />
+      <Thread messages={messages} mineIs="guest" notice={notice} />
     </Shell>
   );
 }
@@ -484,7 +552,11 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 function OwnerConsole({ onExit }: { onExit: () => void }) {
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const { messages, setMessages } = useThread(activeId);
+  const { messages, setMessages, notice } = useThread(activeId, "owner");
+
+  useEffect(() => {
+    askNotificationPermission();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -500,7 +572,14 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
     const channel = supabase
       .channel("owner-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, load)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.sender === "guest") {
+          vibrate();
+          pushNotice("H4CK", "You have a new message", "h4ck-inbox");
+        }
+        load();
+      })
       .subscribe();
 
     return () => {
@@ -568,7 +647,7 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
         }
         footer={<Composer onSend={send} />}
       >
-        <Thread messages={messages} mineIs="owner" />
+        <Thread messages={messages} mineIs="owner" notice={notice} />
       </Shell>
     );
   }
