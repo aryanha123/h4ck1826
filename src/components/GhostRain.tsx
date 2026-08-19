@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Ghost } from "lucide-react";
 
 /** Spooky faces that drop from the top of the screen when the site opens. */
 export function GhostRain({ count = 14 }: { count?: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const ghosts = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
@@ -18,7 +20,7 @@ export function GhostRain({ count = 14 }: { count?: number }) {
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-      {ghosts.map((g) => (
+      {mounted && ghosts.map((g) => (
         <Ghost
           key={g.id}
           className="anim-ghost absolute top-0 text-foreground"
