@@ -213,6 +213,9 @@ function Gate({ onEnter }: { onEnter: (name: string) => void }) {
             Same name reopens your old chat. Nothing ever gets deleted.
           </p>
         </form>
+        <div className="mt-6 flex justify-center">
+          <InstallApp />
+        </div>
         <p
           className="anim-rise mt-6 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.28em] text-muted-foreground/70"
           style={{ animationDelay: "420ms" }}
@@ -549,7 +552,11 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
 function OwnerConsole({ onExit }: { onExit: () => void }) {
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const { messages, setMessages } = useThread(activeId);
+  const { messages, setMessages, notice } = useThread(activeId, "owner");
+
+  useEffect(() => {
+    askNotificationPermission();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -565,7 +572,14 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
     const channel = supabase
       .channel("owner-inbox")
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, load)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.sender === "guest") {
+          vibrate();
+          pushNotice("H4CK", "You have a new message", "h4ck-inbox");
+        }
+        load();
+      })
       .subscribe();
 
     return () => {
@@ -633,7 +647,7 @@ function OwnerConsole({ onExit }: { onExit: () => void }) {
         }
         footer={<Composer onSend={send} />}
       >
-        <Thread messages={messages} mineIs="owner" />
+        <Thread messages={messages} mineIs="owner" notice={notice} />
       </Shell>
     );
   }
