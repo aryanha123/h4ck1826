@@ -281,7 +281,7 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="type something…"
-        maxLength={8000}
+        maxLength={MAX_CHARS}
         aria-label="Message"
         className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
       />
@@ -451,7 +451,24 @@ function replaceOptimistic(
 
 function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
   const [convoId, setConvoId] = useState<string | null>(null);
-  const { messages, setMessages } = useThread(convoId);
+  const { messages, setMessages, notice, setNotice } = useThread(convoId, "guest");
+
+  useEffect(() => {
+    askNotificationPermission();
+  }, []);
+
+  // "You have new messages" hint when re-opening the app, without revealing content.
+  useEffect(() => {
+    if (!messages.length) return;
+    const seen = window.localStorage.getItem(SEEN_KEY);
+    const unseen = messages.filter((m) => m.sender === "owner" && (!seen || m.created_at > seen));
+    if (unseen.length && !notice) {
+      setNotice(`aapke liye ${unseen.length} naya message aaya hai`);
+    }
+    const last = messages[messages.length - 1];
+    if (last) window.localStorage.setItem(SEEN_KEY, last.created_at);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
 
   useEffect(() => {
     let active = true;
@@ -524,7 +541,7 @@ function GuestChat({ name, onExit }: { name: string; onExit: () => void }) {
       }
       footer={<Composer onSend={send} disabled={!convoId} />}
     >
-      <Thread messages={messages} mineIs="guest" />
+      <Thread messages={messages} mineIs="guest" notice={notice} />
     </Shell>
   );
 }
