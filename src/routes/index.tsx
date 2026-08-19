@@ -298,7 +298,15 @@ function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?
   );
 }
 
-function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
+function Thread({
+  messages,
+  mineIs,
+  notice,
+}: {
+  messages: Message[];
+  mineIs: Sender;
+  notice?: string | null;
+}) {
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -306,6 +314,13 @@ function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
 
   return (
     <div className="flex-1 space-y-3 overflow-y-auto px-4 py-6">
+      {notice && (
+        <div className="anim-soft-in glass-panel sticky top-0 z-10 mx-auto mb-2 max-w-[92%] rounded-2xl px-4 py-2.5 text-center">
+          <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase leading-relaxed tracking-[0.18em] text-muted-foreground">
+            {notice}
+          </p>
+        </div>
+      )}
       {messages.length === 0 && (
         <p className="mt-20 text-center font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.25em] text-muted-foreground">
           no signal yet — say something
@@ -335,8 +350,9 @@ function Thread({ messages, mineIs }: { messages: Message[]; mineIs: Sender }) {
   );
 }
 
-function useThread(conversationId: string | null) {
+function useThread(conversationId: string | null, mineIs: Sender) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!conversationId) {
@@ -349,8 +365,26 @@ function useThread(conversationId: string | null) {
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (active && data) setMessages(data as Message[]);
+      .then(async ({ data }) => {
+        if (!active || !data) return;
+        const rows = data as Message[];
+        if (rows.length <= MAX_MESSAGES) {
+          setMessages(rows);
+          return;
+        }
+        const cut = rows.length - TRIM_TO;
+        const stale = rows.slice(0, cut);
+        setMessages(rows.slice(cut));
+        setNotice(
+          `chat full ho gayi thi — sabse purane ${cut} message auto-clear kiye gaye. neeche wali chat safe hai, aap continue kar sakte ho.`,
+        );
+        await supabase
+          .from("messages")
+          .delete()
+          .in(
+            "id",
+            stale.map((m) => m.id),
+          );
       });
 
     const channel = supabase
@@ -365,6 +399,10 @@ function useThread(conversationId: string | null) {
         },
         (payload) => {
           const msg = payload.new as Message;
+          if (msg.sender !== mineIs) {
+            vibrate();
+            pushNotice("H4CK", "You have a new message", `h4ck-${conversationId}`);
+          }
           setMessages((prev) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
             const withoutOptimistic = prev.filter(
@@ -381,9 +419,9 @@ function useThread(conversationId: string | null) {
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, mineIs]);
 
-  return { messages, setMessages };
+  return { messages, setMessages, notice, setNotice };
 }
 
 async function sendMessage(conversationId: string, sender: Sender, content: string) {
