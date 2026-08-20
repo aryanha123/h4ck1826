@@ -40,6 +40,28 @@ self.addEventListener("message", (e) => {
   }
 });
 
+self.addEventListener("push", (e) => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = {};
+  }
+  const isCall = d.kind === "call";
+  e.waitUntil(
+    self.registration.showNotification(d.title || "H4CK", {
+      body: d.body || "You have a new message",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: d.tag || "h4ck-msg",
+      renotify: true,
+      requireInteraction: isCall,
+      vibrate: isCall ? [400, 200, 400, 200, 400] : [80, 40, 80],
+      data: { url: "/" },
+    })
+  );
+});
+
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   e.waitUntil(
