@@ -42,7 +42,11 @@ export async function deliverPush({ conversationId, from, kind }: NotifyInput) {
       };
       try {
         const payload = await buildPushPayload(message, subscription, vapid);
-        const res = await fetch(s.endpoint, payload);
+        const res = await fetch(s.endpoint, {
+          method: payload.method,
+          headers: payload.headers as Record<string, string>,
+          body: new Uint8Array(payload.body).slice().buffer as ArrayBuffer,
+        });
         if (res.status === 404 || res.status === 410) {
           await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
         } else if (res.ok) {
