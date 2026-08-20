@@ -14,27 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_signals: {
+        Row: {
+          call_id: string
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          sender: string
+        }
+        Insert: {
+          call_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          payload: Json
+          sender: string
+        }
+        Update: {
+          call_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_signals_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          answered_at: string | null
+          caller: string
+          conversation_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          caller: string
+          conversation_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          caller?: string
+          conversation_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
+          guest_last_open: string | null
           id: string
           last_message_at: string
           name: string
           name_key: string
+          owner_last_open: string | null
         }
         Insert: {
           created_at?: string
+          guest_last_open?: string | null
           id?: string
           last_message_at?: string
           name: string
           name_key: string
+          owner_last_open?: string | null
         }
         Update: {
           created_at?: string
+          guest_last_open?: string | null
           id?: string
           last_message_at?: string
           name?: string
           name_key?: string
+          owner_last_open?: string | null
         }
         Relationships: []
       }
@@ -44,6 +123,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          seen_at: string | null
           sender: string
         }
         Insert: {
@@ -51,6 +131,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          seen_at?: string | null
           sender: string
         }
         Update: {
@@ -58,11 +139,53 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          seen_at?: string | null
           sender?: string
         }
         Relationships: [
           {
             foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          conversation_id: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          last_active: string
+          p256dh: string
+          role: string
+        }
+        Insert: {
+          auth: string
+          conversation_id?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_active?: string
+          p256dh: string
+          role: string
+        }
+        Update: {
+          auth?: string
+          conversation_id?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_active?: string
+          p256dh?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
