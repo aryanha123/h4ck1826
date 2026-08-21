@@ -18,7 +18,16 @@ export function AuraAudio() {
       if (p) p.catch(() => {});
     };
     tryPlay();
-    const onAny = () => tryPlay();
+    let callActive = false;
+    const onCall = (e: Event) => {
+      callActive = Boolean((e as CustomEvent<boolean>).detail);
+      if (callActive) el.pause();
+      else tryPlay();
+    };
+    window.addEventListener("h4ck-call-active", onCall as EventListener);
+    const onAny = () => {
+      if (!callActive) tryPlay();
+    };
     window.addEventListener("pointerdown", onAny);
     window.addEventListener("keydown", onAny);
     document.addEventListener("visibilitychange", onAny);
