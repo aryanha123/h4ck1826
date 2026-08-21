@@ -57,6 +57,7 @@ export type Database = {
           created_at: string
           ended_at: string | null
           id: string
+          panel_code: string | null
           status: string
         }
         Insert: {
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          panel_code?: string | null
           status?: string
         }
         Update: {
@@ -75,6 +77,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          panel_code?: string | null
           status?: string
         }
         Relationships: [
@@ -96,6 +99,7 @@ export type Database = {
           name: string
           name_key: string
           owner_last_open: string | null
+          panel_code: string | null
         }
         Insert: {
           created_at?: string
@@ -105,6 +109,7 @@ export type Database = {
           name: string
           name_key: string
           owner_last_open?: string | null
+          panel_code?: string | null
         }
         Update: {
           created_at?: string
@@ -114,6 +119,7 @@ export type Database = {
           name?: string
           name_key?: string
           owner_last_open?: string | null
+          panel_code?: string | null
         }
         Relationships: []
       }
@@ -152,6 +158,30 @@ export type Database = {
           },
         ]
       }
+      panels: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          label: string
+          password: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          label?: string
+          password: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          label?: string
+          password?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -161,6 +191,7 @@ export type Database = {
           id: string
           last_active: string
           p256dh: string
+          panel_code: string | null
           role: string
         }
         Insert: {
@@ -171,6 +202,7 @@ export type Database = {
           id?: string
           last_active?: string
           p256dh: string
+          panel_code?: string | null
           role: string
         }
         Update: {
@@ -181,6 +213,7 @@ export type Database = {
           id?: string
           last_active?: string
           p256dh?: string
+          panel_code?: string | null
           role?: string
         }
         Relationships: [
