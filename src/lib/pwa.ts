@@ -65,6 +65,7 @@ export async function enablePush(
         auth,
         role,
         conversation_id: conversationId,
+        panel_code: panelCode,
         last_active: new Date().toISOString(),
       },
       { onConflict: "endpoint" },
