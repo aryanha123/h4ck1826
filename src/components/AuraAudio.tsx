@@ -32,6 +32,7 @@ export function AuraAudio() {
     window.addEventListener("keydown", onAny);
     document.addEventListener("visibilitychange", onAny);
     return () => {
+      window.removeEventListener("h4ck-call-active", onCall as EventListener);
       window.removeEventListener("pointerdown", onAny);
       window.removeEventListener("keydown", onAny);
       document.removeEventListener("visibilitychange", onAny);
