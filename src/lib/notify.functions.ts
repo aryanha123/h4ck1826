@@ -10,6 +10,7 @@ export const sendPushNotice = createServerFn({ method: "POST" })
         conversationId: z.string().uuid(),
         from: z.enum(["guest", "owner"]),
         kind: z.enum(["message", "call"]),
+        panelCode: z.string().nullable().optional(),
       })
       .parse(data),
   )

@@ -4,10 +4,11 @@ export type NotifyInput = {
   conversationId: string;
   from: "guest" | "owner";
   kind: "message" | "call";
+  panelCode?: string | null | undefined;
 };
 
 /** Sends a silent-content web push to the other side of a thread. */
-export async function deliverPush({ conversationId, from, kind }: NotifyInput) {
+export async function deliverPush({ conversationId, from, kind, panelCode }: NotifyInput) {
   const vapid = {
     subject: process.env["VAPID_SUBJECT"] ?? "mailto:owner@example.com",
     publicKey: process.env["VAPID_PUBLIC_KEY"],
@@ -17,18 +18,33 @@ export async function deliverPush({ conversationId, from, kind }: NotifyInput) {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const query = supabaseAdmin.from("push_subscriptions").select("*");
-  const { data: subs } =
-    from === "guest"
-      ? await query.eq("role", "owner")
-      : await query.eq("role", "guest").eq("conversation_id", conversationId);
+  let subs: Array<{ endpoint: string; auth: string; p256dh: string }> = [];
 
-  if (!subs?.length) return { sent: 0 };
+  if (from === "guest") {
+    // master owner always gets it; the panel owner (if any) gets it too
+    const { data } = await supabaseAdmin.from("push_subscriptions").select("*").eq("role", "owner");
+    subs = (data ?? []).filter(
+      (s) => !s.panel_code || (panelCode ? s.panel_code === panelCode : false),
+    );
+  } else {
+    const { data } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("*")
+      .eq("role", "guest")
+      .eq("conversation_id", conversationId);
+    subs = data ?? [];
+  }
 
-  const body =
-    kind === "call" ? "Incoming audio call" : "You have a new message";
+  if (!subs.length) return { sent: 0 };
+
+  const body = kind === "call" ? "Incoming audio call" : "You have a new message";
   const message = {
-    data: { title: "H4CK", body, tag: kind === "call" ? "h4ck-call" : `h4ck-${conversationId}`, kind },
+    data: {
+      title: "H4CK",
+      body,
+      tag: kind === "call" ? "h4ck-call" : `h4ck-${conversationId}`,
+      kind,
+    },
     options: { ttl: kind === "call" ? 60 : 3600, urgency: "high" as const },
   };
 

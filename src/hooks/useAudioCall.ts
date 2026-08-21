@@ -27,10 +27,14 @@ export function useAudioCall({
   conversationId,
   role,
   onIncoming,
+  panelCode = null,
+  canAccept,
 }: {
   conversationId: string | null;
   role: Party;
   onIncoming?: (conversationId: string) => void;
+  panelCode?: string | null;
+  canAccept?: (conversationId: string) => boolean;
 }) {
   const [phase, setPhase] = useState<CallPhase>("idle");
   const [call, setCall] = useState<CallRow | null>(null);
@@ -207,6 +211,7 @@ export function useAudioCall({
           const row = payload.new as CallRow;
           if (row.caller === role || row.status !== "ringing") return;
           if (callRef.current) return;
+          if (canAccept && !canAccept(row.conversation_id)) return;
           onIncoming?.(row.conversation_id);
           setCall(row);
           setPhase("incoming");
@@ -243,7 +248,9 @@ export function useAudioCall({
         kind: "offer",
         payload: { type: offer.type, sdp: offer.sdp } as never,
       });
-      void sendPushNotice({ data: { conversationId, from: role, kind: "call" } }).catch(() => {});
+      void sendPushNotice({
+        data: { conversationId, from: role, kind: "call", panelCode },
+      }).catch(() => {});
       ringTimer.current = setTimeout(() => {
         void finish("missed", peerOnline ? "No answer" : "Not reachable — they are offline");
       }, RING_TIMEOUT);
@@ -253,7 +260,7 @@ export function useAudioCall({
       setStatus("Call could not start — check mic permission");
       setTimeout(() => setPhase("idle"), 2000);
     }
-  }, [conversationId, phase, role, peerOnline, buildPeer, finish, cleanup]);
+  }, [conversationId, phase, role, peerOnline, panelCode, buildPeer, finish, cleanup]);
 
   const acceptCall = useCallback(async () => {
     const row = callRef.current;
