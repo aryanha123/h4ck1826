@@ -4,7 +4,7 @@ export type NotifyInput = {
   conversationId: string;
   from: "guest" | "owner";
   kind: "message" | "call";
-  panelCode?: string | null;
+  panelCode?: string | null | undefined;
 };
 
 /** Sends a silent-content web push to the other side of a thread. */
