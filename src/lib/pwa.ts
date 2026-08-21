@@ -35,7 +35,11 @@ function b64(buf: ArrayBuffer | null) {
  * Registers this device for OS-level push so alerts arrive with the app closed.
  * Guests are tied to their thread, the owner receives every thread.
  */
-export async function enablePush(role: "guest" | "owner", conversationId: string | null) {
+export async function enablePush(
+  role: "guest" | "owner",
+  conversationId: string | null,
+  panelCode: string | null = null,
+) {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window))
     return false;
   if (!(await askNotificationPermission())) return false;
