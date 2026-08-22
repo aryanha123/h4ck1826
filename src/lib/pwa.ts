@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Public VAPID key — safe to ship to the browser. */
 const VAPID_PUBLIC_KEY =
-  "BCx02rTzuKrY13aN6kDC9HqzktO_RnNvQONnisu-1lAuINoqZLjV7J9g92StnqLsYO7Y3R7NrbigFNw5VSISYos";
+  "BMPNYKU2x-qSpEkXrTwODAk72TmA4zPyxgwl2FljtaTBDnBIX_aEEcxFdJ4pE-aQs-59NG-niZeLqN43njVo7dM";
 
 let swReg: ServiceWorkerRegistration | null = null;
 
@@ -14,6 +14,7 @@ export function registerServiceWorker() {
     .register("/sw.js")
     .then((r) => {
       swReg = r;
+      void r.update();
     })
     .catch(() => {});
 }
@@ -26,9 +27,32 @@ function urlBase64ToUint8Array(base64: string) {
   return out;
 }
 
+function b64url(buf: ArrayBuffer | null) {
+  if (!buf) return "";
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
 function b64(buf: ArrayBuffer | null) {
   if (!buf) return "";
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+export function pushSupported() {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
+export function notificationsOn() {
+  return typeof window !== "undefined" && "Notification" in window
+    ? Notification.permission === "granted"
+    : false;
 }
 
 /**
@@ -40,14 +64,25 @@ export async function enablePush(
   conversationId: string | null,
   panelCode: string | null = null,
 ) {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window))
-    return false;
+  if (!pushSupported()) return false;
   if (!(await askNotificationPermission())) return false;
   try {
+    registerServiceWorker();
     const reg = (await navigator.serviceWorker.ready) ?? swReg;
     if (!reg) return false;
     swReg = reg;
-    const existing = await reg.pushManager.getSubscription();
+
+    // a subscription made with an older server key can never be delivered to
+    let existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      const key = b64url(existing.options?.applicationServerKey ?? null);
+      if (key && key !== VAPID_PUBLIC_KEY) {
+        await supabase.from("push_subscriptions").delete().eq("endpoint", existing.endpoint);
+        await existing.unsubscribe().catch(() => false);
+        existing = null;
+      }
+    }
+
     const sub =
       existing ??
       (await reg.pushManager.subscribe({
@@ -58,7 +93,7 @@ export async function enablePush(
     const p256dh = json.keys?.p256dh ?? b64(sub.getKey("p256dh"));
     const auth = json.keys?.auth ?? b64(sub.getKey("auth"));
     if (!p256dh || !auth) return false;
-    await supabase.from("push_subscriptions").upsert(
+    const { error } = await supabase.from("push_subscriptions").upsert(
       {
         endpoint: sub.endpoint,
         p256dh,
@@ -70,7 +105,7 @@ export async function enablePush(
       },
       { onConflict: "endpoint" },
     );
-    return true;
+    return !error;
   } catch {
     return false;
   }

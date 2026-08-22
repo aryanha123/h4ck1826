@@ -10,9 +10,10 @@ export type NotifyInput = {
 /** Sends a silent-content web push to the other side of a thread. */
 export async function deliverPush({ conversationId, from, kind, panelCode }: NotifyInput) {
   const vapid = {
-    subject: process.env["VAPID_SUBJECT"] ?? "mailto:owner@example.com",
-    publicKey: process.env["VAPID_PUBLIC_KEY"],
-    privateKey: process.env["VAPID_PRIVATE_KEY"],
+    subject:
+      process.env["VAPID_SUBJECT_V2"] ?? process.env["VAPID_SUBJECT"] ?? "mailto:owner@example.com",
+    publicKey: process.env["VAPID_PUBLIC_KEY_V2"] ?? process.env["VAPID_PUBLIC_KEY"],
+    privateKey: process.env["VAPID_PRIVATE_KEY_V2"] ?? process.env["VAPID_PRIVATE_KEY"],
   };
   if (!vapid.publicKey || !vapid.privateKey) return { sent: 0 };
 
