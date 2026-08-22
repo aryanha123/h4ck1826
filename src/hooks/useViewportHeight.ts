@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 
 /**
- * Real visible height (keyboard aware). Keeps the chat header pinned instead of
- * letting mobile browsers scroll the whole page when the keyboard opens.
+ * Real visible height + offset (keyboard aware). Keeps the chat glued to the
+ * keyboard instead of letting mobile browsers float the whole panel upwards.
  */
 export function useViewportHeight() {
-  const [h, setH] = useState<number | null>(null);
+  const [box, setBox] = useState<{ h: number | null; top: number }>({ h: null, top: 0 });
 
   useEffect(() => {
     const vv = window.visualViewport;
-    const read = () => setH(Math.round(vv?.height ?? window.innerHeight));
+    const read = () =>
+      setBox({
+        h: Math.round(vv?.height ?? window.innerHeight),
+        top: Math.round(vv?.offsetTop ?? 0),
+      });
     read();
     vv?.addEventListener("resize", read);
     vv?.addEventListener("scroll", read);
@@ -23,5 +27,5 @@ export function useViewportHeight() {
     };
   }, []);
 
-  return h;
+  return box;
 }
