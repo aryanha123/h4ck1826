@@ -949,61 +949,32 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
 
   if (activeConvo) {
     return (
-      <>
-        <CallOverlay
-          phase={call.phase}
-          seconds={call.seconds}
-          status={call.status}
-          muted={call.muted}
-          title={activeConvo.name}
-          onAccept={call.acceptCall}
-          onDecline={call.declineCall}
-          onHangUp={call.hangUp}
-          onToggleMute={call.toggleMute}
-        />
-        <Shell
-          title={activeConvo.name}
-          subtitle={ago(activeConvo.guest_last_open)}
-          left={
-            <IconButton onClick={() => setActiveId(null)} label="Back to inbox">
-              <ArrowLeft className="h-5 w-5" />
-            </IconButton>
-          }
-          right={
-            <div className="flex items-center">
-              <IconButton onClick={call.startCall} label="Audio call">
-                <Phone className="h-5 w-5" />
-              </IconButton>
-              <IconButton
-                onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
-                label="Delete this chat"
-                danger
-              >
-                <Trash2 className="h-5 w-5" />
-              </IconButton>
-            </div>
-          }
-          footer={<Composer onSend={send} />}
-        >
-          <Thread messages={messages} mineIs="owner" notice={notice} />
-        </Shell>
-      </>
+      <Shell
+        title={activeConvo.name}
+        subtitle={ago(activeConvo.guest_last_open)}
+        left={
+          <IconButton onClick={() => setActiveId(null)} label="Back to inbox">
+            <ArrowLeft className="h-5 w-5" />
+          </IconButton>
+        }
+        right={
+          <IconButton
+            onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
+            label="Delete this chat"
+            danger
+          >
+            <Trash2 className="h-5 w-5" />
+          </IconButton>
+        }
+        footer={<Composer onSend={send} maxChars={MAX_CHARS} />}
+      >
+        <Thread messages={messages} mineIs="owner" notice={notice} />
+      </Shell>
     );
   }
 
   return (
     <>
-      <CallOverlay
-        phase={call.phase}
-        seconds={call.seconds}
-        status={call.status}
-        muted={call.muted}
-        title="Incoming"
-        onAccept={call.acceptCall}
-        onDecline={call.declineCall}
-        onHangUp={call.hangUp}
-        onToggleMute={call.toggleMute}
-      />
       {showPanels && <PanelManager onClose={() => setShowPanels(false)} />}
       <Shell
         title={panel ? panel.label : "Inbox"}
