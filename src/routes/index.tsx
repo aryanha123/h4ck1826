@@ -400,44 +400,33 @@ function IconButton({
   );
 }
 
-function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?: boolean }) {
-  const [text, setText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = text.trim();
-    if (!v || disabled) return;
-    setText("");
-    onSend(v);
-    inputRef.current?.focus();
-  };
-
-  return (
-    <form
-      onSubmit={submit}
-      className="flex shrink-0 items-center gap-2 border-t border-border bg-card/60 px-3 py-3 backdrop-blur-xl"
-    >
-      <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-input/70 px-2 py-1 backdrop-blur-xl transition focus-within:border-foreground/50 focus-within:[box-shadow:0_0_0_4px_oklch(1_0_0/8%)]">
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="type something…"
-          maxLength={MAX_CHARS}
-          aria-label="Message"
-          className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
+function BubbleBody({ m, mine }: { m: Message; mine: boolean }) {
+  if (m.kind === "photo" && m.media_url) {
+    return (
+      <a href={m.media_url} target="_blank" rel="noreferrer" className="block">
+        <img
+          src={m.media_url}
+          alt="photo"
+          loading="lazy"
+          className="max-h-72 w-auto max-w-full rounded-2xl object-cover"
         />
-        <button
-          type="submit"
-          disabled={!text.trim() || disabled}
-          aria-label="Send"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
-        >
-          <Send className="h-5 w-5" />
-        </button>
+      </a>
+    );
+  }
+  if (m.kind === "voice" && m.media_url) {
+    return (
+      <div className="min-w-44">
+        <audio controls preload="metadata" src={m.media_url} className="h-9 w-full" />
+        {m.media_duration != null && (
+          <p className={`mt-1 text-[10px] ${mine ? "opacity-70" : "text-muted-foreground"}`}>
+            voice note · {m.media_duration}s
+          </p>
+        )}
       </div>
-    </form>
+    );
+  }
+  return (
+    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</p>
   );
 }
 
