@@ -6,9 +6,7 @@ import {
   CheckCheck,
   LogOut,
   MessageSquare,
-  Phone,
   Plus,
-  Send,
   Shield,
   Trash2,
 } from "lucide-react";
@@ -17,8 +15,7 @@ import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
 import { Splash } from "@/components/Splash";
 import { InstallApp } from "@/components/InstallApp";
-import { CallOverlay } from "@/components/CallOverlay";
-import { useAudioCall } from "@/hooks/useAudioCall";
+import { Composer, type Outgoing } from "@/components/Composer";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { enablePush, askNotificationPermission, registerServiceWorker, vibrate } from "@/lib/pwa";
 import { sendPushNotice } from "@/lib/notify.functions";
