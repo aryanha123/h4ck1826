@@ -465,11 +465,9 @@ function Thread({
             <div
               className={`max-w-[80%] rounded-3xl px-4 py-2.5 ${
                 mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md"
-              }`}
+              } ${m.kind === "photo" ? "px-1.5 py-1.5" : ""}`}
             >
-              <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-                {m.content}
-              </p>
+              <BubbleBody m={m} mine={mine} />
               <p
                 className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
                   mine ? "opacity-70" : "text-muted-foreground"
