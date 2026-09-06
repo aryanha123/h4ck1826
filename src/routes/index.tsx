@@ -52,11 +52,15 @@ const TRIM_TO = 3000;
 const MAX_CHARS = 20000;
 
 type Sender = "guest" | "owner";
+type MessageKind = "text" | "photo" | "voice";
 type Message = {
   id: string;
   conversation_id: string;
   sender: Sender;
   content: string;
+  kind: MessageKind;
+  media_url: string | null;
+  media_duration: number | null;
   created_at: string;
   seen_at: string | null;
 };
@@ -350,8 +354,11 @@ function Shell({
   const vh = useViewportHeight();
   return (
     <main
-      className="fixed inset-x-0 top-0 mx-auto flex w-full max-w-2xl flex-col overflow-hidden"
-      style={{ height: vh ? `${vh}px` : "100dvh" }}
+      className="fixed inset-x-0 mx-auto flex w-full max-w-2xl flex-col overflow-hidden"
+      style={{
+        height: vh.h ? `${vh.h}px` : "100dvh",
+        top: vh.top ? `${vh.top}px` : 0,
+      }}
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card/60 px-4 py-3 backdrop-blur-xl">
         {left}
