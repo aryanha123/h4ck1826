@@ -6,9 +6,7 @@ import {
   CheckCheck,
   LogOut,
   MessageSquare,
-  Phone,
   Plus,
-  Send,
   Shield,
   Trash2,
 } from "lucide-react";
@@ -17,8 +15,7 @@ import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
 import { Splash } from "@/components/Splash";
 import { InstallApp } from "@/components/InstallApp";
-import { CallOverlay } from "@/components/CallOverlay";
-import { useAudioCall } from "@/hooks/useAudioCall";
+import { Composer, type Outgoing } from "@/components/Composer";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { enablePush, askNotificationPermission, registerServiceWorker, vibrate } from "@/lib/pwa";
 import { sendPushNotice } from "@/lib/notify.functions";
@@ -55,11 +52,15 @@ const TRIM_TO = 3000;
 const MAX_CHARS = 20000;
 
 type Sender = "guest" | "owner";
+type MessageKind = "text" | "photo" | "voice";
 type Message = {
   id: string;
   conversation_id: string;
   sender: Sender;
   content: string;
+  kind: MessageKind;
+  media_url: string | null;
+  media_duration: number | null;
   created_at: string;
   seen_at: string | null;
 };
@@ -353,8 +354,11 @@ function Shell({
   const vh = useViewportHeight();
   return (
     <main
-      className="fixed inset-x-0 top-0 mx-auto flex w-full max-w-2xl flex-col overflow-hidden"
-      style={{ height: vh ? `${vh}px` : "100dvh" }}
+      className="fixed inset-x-0 mx-auto flex w-full max-w-2xl flex-col overflow-hidden"
+      style={{
+        height: vh.h ? `${vh.h}px` : "100dvh",
+        top: vh.top ? `${vh.top}px` : 0,
+      }}
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card/60 px-4 py-3 backdrop-blur-xl">
         {left}
@@ -396,44 +400,33 @@ function IconButton({
   );
 }
 
-function Composer({ onSend, disabled }: { onSend: (t: string) => void; disabled?: boolean }) {
-  const [text, setText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = text.trim();
-    if (!v || disabled) return;
-    setText("");
-    onSend(v);
-    inputRef.current?.focus();
-  };
-
-  return (
-    <form
-      onSubmit={submit}
-      className="flex shrink-0 items-center gap-2 border-t border-border bg-card/60 px-3 py-3 backdrop-blur-xl"
-    >
-      <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-input/70 px-2 py-1 backdrop-blur-xl transition focus-within:border-foreground/50 focus-within:[box-shadow:0_0_0_4px_oklch(1_0_0/8%)]">
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="type something…"
-          maxLength={MAX_CHARS}
-          aria-label="Message"
-          className="flex-1 bg-transparent px-3 py-2.5 outline-none placeholder:text-muted-foreground"
+function BubbleBody({ m, mine }: { m: Message; mine: boolean }) {
+  if (m.kind === "photo" && m.media_url) {
+    return (
+      <a href={m.media_url} target="_blank" rel="noreferrer" className="block">
+        <img
+          src={m.media_url}
+          alt="photo"
+          loading="lazy"
+          className="max-h-72 w-auto max-w-full rounded-2xl object-cover"
         />
-        <button
-          type="submit"
-          disabled={!text.trim() || disabled}
-          aria-label="Send"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-30 active:scale-95"
-        >
-          <Send className="h-5 w-5" />
-        </button>
+      </a>
+    );
+  }
+  if (m.kind === "voice" && m.media_url) {
+    return (
+      <div className="min-w-44">
+        <audio controls preload="metadata" src={m.media_url} className="h-9 w-full" />
+        {m.media_duration != null && (
+          <p className={`mt-1 text-[10px] ${mine ? "opacity-70" : "text-muted-foreground"}`}>
+            voice note · {m.media_duration}s
+          </p>
+        )}
       </div>
-    </form>
+    );
+  }
+  return (
+    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.content}</p>
   );
 }
 
@@ -472,11 +465,9 @@ function Thread({
             <div
               className={`max-w-[80%] rounded-3xl px-4 py-2.5 ${
                 mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md"
-              }`}
+              } ${m.kind === "photo" ? "px-1.5 py-1.5" : ""}`}
             >
-              <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-                {m.content}
-              </p>
+              <BubbleBody m={m} mine={mine} />
               <p
                 className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
                   mine ? "opacity-70" : "text-muted-foreground"
@@ -613,10 +604,17 @@ function useThread(conversationId: string | null, mineIs: Sender) {
   return { messages, setMessages, notice, setNotice };
 }
 
-async function sendMessage(conversationId: string, sender: Sender, content: string) {
+async function sendMessage(conversationId: string, sender: Sender, out: Outgoing) {
   const { data } = await supabase
     .from("messages")
-    .insert({ conversation_id: conversationId, sender, content })
+    .insert({
+      conversation_id: conversationId,
+      sender,
+      content: out.kind === "text" ? out.content : "",
+      kind: out.kind,
+      media_url: out.kind === "text" ? null : out.mediaUrl,
+      media_duration: out.kind === "voice" ? out.duration : null,
+    })
     .select()
     .maybeSingle();
   await supabase
@@ -650,8 +648,6 @@ function GuestChat({
   const [convoId, setConvoId] = useState<string | null>(null);
   const [ownerSeen, setOwnerSeen] = useState<string | null>(null);
   const { messages, setMessages, notice } = useThread(convoId, "guest");
-
-  const call = useAudioCall({ conversationId: convoId, role: "guest", panelCode: code });
 
   useEffect(() => {
     void askNotificationPermission();
@@ -705,19 +701,22 @@ function GuestChat({
   }, [name, code]);
 
   const send = useCallback(
-    async (text: string) => {
+    async (out: Outgoing) => {
       if (!convoId) return;
-      const tmpId = `tmp-${Date.now()}`;
+      const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const optimistic: Message = {
         id: tmpId,
         conversation_id: convoId,
         sender: "guest",
-        content: text,
+        content: out.kind === "text" ? out.content : "",
+        kind: out.kind,
+        media_url: out.kind === "text" ? null : out.mediaUrl,
+        media_duration: out.kind === "voice" ? out.duration : null,
         created_at: new Date().toISOString(),
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(convoId, "guest", text);
+      const row = await sendMessage(convoId, "guest", out);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: convoId, from: "guest", kind: "message", panelCode: code },
@@ -727,41 +726,23 @@ function GuestChat({
   );
 
   return (
-    <>
-      <CallOverlay
-        phase={call.phase}
-        seconds={call.seconds}
-        status={call.status}
-        muted={call.muted}
-        title="HAROON H4CK"
-        onAccept={call.acceptCall}
-        onDecline={call.declineCall}
-        onHangUp={call.hangUp}
-        onToggleMute={call.toggleMute}
-      />
-      <Shell
-        title="HAROON H4CK"
-        subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
-        left={
-          <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
-            <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
-          </span>
-        }
-        right={
-          <div className="flex items-center">
-            <IconButton onClick={call.startCall} label="Audio call">
-              <Phone className="h-5 w-5" />
-            </IconButton>
-            <IconButton onClick={onExit} label="Leave">
-              <LogOut className="h-5 w-5" />
-            </IconButton>
-          </div>
-        }
-        footer={<Composer onSend={send} disabled={!convoId} />}
-      >
-        <Thread messages={messages} mineIs="guest" notice={notice} />
-      </Shell>
-    </>
+    <Shell
+      title="HAROON H4CK"
+      subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
+      left={
+        <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
+          <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
+        </span>
+      }
+      right={
+        <IconButton onClick={onExit} label="Leave">
+          <LogOut className="h-5 w-5" />
+        </IconButton>
+      }
+      footer={<Composer onSend={send} disabled={!convoId} maxChars={MAX_CHARS} />}
+    >
+      <Thread messages={messages} mineIs="guest" notice={notice} />
+    </Shell>
   );
 }
 
@@ -884,16 +865,6 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showPanels, setShowPanels] = useState(false);
   const { messages, setMessages, notice } = useThread(activeId, "owner");
-  const convosRef = useRef<Conversation[]>([]);
-  convosRef.current = convos;
-
-  const call = useAudioCall({
-    conversationId: activeId,
-    role: "owner",
-    panelCode: panel?.code ?? null,
-    onIncoming: (id) => setActiveId(id),
-    canAccept: (id) => convosRef.current.some((c) => c.id === id),
-  });
 
   useEffect(() => {
     void askNotificationPermission();
@@ -952,19 +923,22 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   }, []);
 
   const send = useCallback(
-    async (text: string) => {
+    async (out: Outgoing) => {
       if (!activeId) return;
-      const tmpId = `tmp-${Date.now()}`;
+      const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const optimistic: Message = {
         id: tmpId,
         conversation_id: activeId,
         sender: "owner",
-        content: text,
+        content: out.kind === "text" ? out.content : "",
+        kind: out.kind,
+        media_url: out.kind === "text" ? null : out.mediaUrl,
+        media_duration: out.kind === "voice" ? out.duration : null,
         created_at: new Date().toISOString(),
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(activeId, "owner", text);
+      const row = await sendMessage(activeId, "owner", out);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: activeId, from: "owner", kind: "message" },
@@ -975,61 +949,32 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
 
   if (activeConvo) {
     return (
-      <>
-        <CallOverlay
-          phase={call.phase}
-          seconds={call.seconds}
-          status={call.status}
-          muted={call.muted}
-          title={activeConvo.name}
-          onAccept={call.acceptCall}
-          onDecline={call.declineCall}
-          onHangUp={call.hangUp}
-          onToggleMute={call.toggleMute}
-        />
-        <Shell
-          title={activeConvo.name}
-          subtitle={ago(activeConvo.guest_last_open)}
-          left={
-            <IconButton onClick={() => setActiveId(null)} label="Back to inbox">
-              <ArrowLeft className="h-5 w-5" />
-            </IconButton>
-          }
-          right={
-            <div className="flex items-center">
-              <IconButton onClick={call.startCall} label="Audio call">
-                <Phone className="h-5 w-5" />
-              </IconButton>
-              <IconButton
-                onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
-                label="Delete this chat"
-                danger
-              >
-                <Trash2 className="h-5 w-5" />
-              </IconButton>
-            </div>
-          }
-          footer={<Composer onSend={send} />}
-        >
-          <Thread messages={messages} mineIs="owner" notice={notice} />
-        </Shell>
-      </>
+      <Shell
+        title={activeConvo.name}
+        subtitle={ago(activeConvo.guest_last_open)}
+        left={
+          <IconButton onClick={() => setActiveId(null)} label="Back to inbox">
+            <ArrowLeft className="h-5 w-5" />
+          </IconButton>
+        }
+        right={
+          <IconButton
+            onClick={() => deleteThread(activeConvo.id, activeConvo.name)}
+            label="Delete this chat"
+            danger
+          >
+            <Trash2 className="h-5 w-5" />
+          </IconButton>
+        }
+        footer={<Composer onSend={send} maxChars={MAX_CHARS} />}
+      >
+        <Thread messages={messages} mineIs="owner" notice={notice} />
+      </Shell>
     );
   }
 
   return (
     <>
-      <CallOverlay
-        phase={call.phase}
-        seconds={call.seconds}
-        status={call.status}
-        muted={call.muted}
-        title="Incoming"
-        onAccept={call.acceptCall}
-        onDecline={call.declineCall}
-        onHangUp={call.hangUp}
-        onToggleMute={call.toggleMute}
-      />
       {showPanels && <PanelManager onClose={() => setShowPanels(false)} />}
       <Shell
         title={panel ? panel.label : "Inbox"}
