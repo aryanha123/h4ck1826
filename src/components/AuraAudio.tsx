@@ -12,7 +12,7 @@ export function AuraAudio() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.volume = 0.35;
+    el.volume = 0.2;
     const tryPlay = () => {
       const p = el.play();
       if (p) p.catch(() => {});
