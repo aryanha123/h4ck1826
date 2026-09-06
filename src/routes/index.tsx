@@ -865,16 +865,6 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showPanels, setShowPanels] = useState(false);
   const { messages, setMessages, notice } = useThread(activeId, "owner");
-  const convosRef = useRef<Conversation[]>([]);
-  convosRef.current = convos;
-
-  const call = useAudioCall({
-    conversationId: activeId,
-    role: "owner",
-    panelCode: panel?.code ?? null,
-    onIncoming: (id) => setActiveId(id),
-    canAccept: (id) => convosRef.current.some((c) => c.id === id),
-  });
 
   useEffect(() => {
     void askNotificationPermission();
@@ -933,19 +923,22 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   }, []);
 
   const send = useCallback(
-    async (text: string) => {
+    async (out: Outgoing) => {
       if (!activeId) return;
-      const tmpId = `tmp-${Date.now()}`;
+      const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const optimistic: Message = {
         id: tmpId,
         conversation_id: activeId,
         sender: "owner",
-        content: text,
+        content: out.kind === "text" ? out.content : "",
+        kind: out.kind,
+        media_url: out.kind === "text" ? null : out.mediaUrl,
+        media_duration: out.kind === "voice" ? out.duration : null,
         created_at: new Date().toISOString(),
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(activeId, "owner", text);
+      const row = await sendMessage(activeId, "owner", out);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: activeId, from: "owner", kind: "message" },
