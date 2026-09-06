@@ -701,19 +701,22 @@ function GuestChat({
   }, [name, code]);
 
   const send = useCallback(
-    async (text: string) => {
+    async (out: Outgoing) => {
       if (!convoId) return;
-      const tmpId = `tmp-${Date.now()}`;
+      const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const optimistic: Message = {
         id: tmpId,
         conversation_id: convoId,
         sender: "guest",
-        content: text,
+        content: out.kind === "text" ? out.content : "",
+        kind: out.kind,
+        media_url: out.kind === "text" ? null : out.mediaUrl,
+        media_duration: out.kind === "voice" ? out.duration : null,
         created_at: new Date().toISOString(),
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(convoId, "guest", text);
+      const row = await sendMessage(convoId, "guest", out);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: convoId, from: "guest", kind: "message", panelCode: code },
@@ -723,41 +726,23 @@ function GuestChat({
   );
 
   return (
-    <>
-      <CallOverlay
-        phase={call.phase}
-        seconds={call.seconds}
-        status={call.status}
-        muted={call.muted}
-        title="HAROON H4CK"
-        onAccept={call.acceptCall}
-        onDecline={call.declineCall}
-        onHangUp={call.hangUp}
-        onToggleMute={call.toggleMute}
-      />
-      <Shell
-        title="HAROON H4CK"
-        subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
-        left={
-          <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
-            <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
-          </span>
-        }
-        right={
-          <div className="flex items-center">
-            <IconButton onClick={call.startCall} label="Audio call">
-              <Phone className="h-5 w-5" />
-            </IconButton>
-            <IconButton onClick={onExit} label="Leave">
-              <LogOut className="h-5 w-5" />
-            </IconButton>
-          </div>
-        }
-        footer={<Composer onSend={send} disabled={!convoId} />}
-      >
-        <Thread messages={messages} mineIs="guest" notice={notice} />
-      </Shell>
-    </>
+    <Shell
+      title="HAROON H4CK"
+      subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
+      left={
+        <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
+          <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
+        </span>
+      }
+      right={
+        <IconButton onClick={onExit} label="Leave">
+          <LogOut className="h-5 w-5" />
+        </IconButton>
+      }
+      footer={<Composer onSend={send} disabled={!convoId} maxChars={MAX_CHARS} />}
+    >
+      <Thread messages={messages} mineIs="guest" notice={notice} />
+    </Shell>
   );
 }
 
