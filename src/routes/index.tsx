@@ -604,10 +604,17 @@ function useThread(conversationId: string | null, mineIs: Sender) {
   return { messages, setMessages, notice, setNotice };
 }
 
-async function sendMessage(conversationId: string, sender: Sender, content: string) {
+async function sendMessage(conversationId: string, sender: Sender, out: Outgoing) {
   const { data } = await supabase
     .from("messages")
-    .insert({ conversation_id: conversationId, sender, content })
+    .insert({
+      conversation_id: conversationId,
+      sender,
+      content: out.kind === "text" ? out.content : "",
+      kind: out.kind,
+      media_url: out.kind === "text" ? null : out.mediaUrl,
+      media_duration: out.kind === "voice" ? out.duration : null,
+    })
     .select()
     .maybeSingle();
   await supabase
@@ -641,8 +648,6 @@ function GuestChat({
   const [convoId, setConvoId] = useState<string | null>(null);
   const [ownerSeen, setOwnerSeen] = useState<string | null>(null);
   const { messages, setMessages, notice } = useThread(convoId, "guest");
-
-  const call = useAudioCall({ conversationId: convoId, role: "guest", panelCode: code });
 
   useEffect(() => {
     void askNotificationPermission();
