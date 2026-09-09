@@ -15,3 +15,10 @@ export const sendPushNotice = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => deliverPush(data));
+
+/** The public VAPID key is safe to expose — it only identifies our server. */
+export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async () => {
+  return (
+    process.env["VAPID_PUBLIC_KEY_V2"] ?? process.env["VAPID_PUBLIC_KEY"] ?? null
+  );
+});

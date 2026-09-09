@@ -1,10 +1,20 @@
 /** Progressive-app helpers: service worker, install prompt, notifications. */
 
 import { supabase } from "@/integrations/supabase/client";
+import { getVapidPublicKey } from "@/lib/notify.functions";
 
-/** Public VAPID key — safe to ship to the browser. */
-const VAPID_PUBLIC_KEY =
+/** Fallback public VAPID key — safe to ship to the browser. */
+const FALLBACK_VAPID_KEY =
   "BMPNYKU2x-qSpEkXrTwODAk72TmA4zPyxgwl2FljtaTBDnBIX_aEEcxFdJ4pE-aQs-59NG-niZeLqN43njVo7dM";
+
+let vapidKeyPromise: Promise<string> | null = null;
+/** Always subscribe with the exact key the server signs with. */
+function vapidKey() {
+  vapidKeyPromise ??= getVapidPublicKey()
+    .then((k) => k ?? FALLBACK_VAPID_KEY)
+    .catch(() => FALLBACK_VAPID_KEY);
+  return vapidKeyPromise;
+}
 
 let swReg: ServiceWorkerRegistration | null = null;
 
