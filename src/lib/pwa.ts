@@ -82,11 +82,13 @@ export async function enablePush(
     if (!reg) return false;
     swReg = reg;
 
+    const serverKey = await vapidKey();
+
     // a subscription made with an older server key can never be delivered to
     let existing = await reg.pushManager.getSubscription();
     if (existing) {
       const key = b64url(existing.options?.applicationServerKey ?? null);
-      if (key && key !== VAPID_PUBLIC_KEY) {
+      if (key && key !== serverKey) {
         await supabase.from("push_subscriptions").delete().eq("endpoint", existing.endpoint);
         await existing.unsubscribe().catch(() => false);
         existing = null;
@@ -97,7 +99,7 @@ export async function enablePush(
       existing ??
       (await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: urlBase64ToUint8Array(serverKey),
       }));
     const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
     const p256dh = json.keys?.p256dh ?? b64(sub.getKey("p256dh"));
