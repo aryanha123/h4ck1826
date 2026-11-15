@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Contact privacy
+- Store visitor-shared phone numbers in a service-role-only table and expose reads only through server functions that validate a dedicated secret, so public chat access never grants access to contact details.
