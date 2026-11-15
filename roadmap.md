@@ -1,0 +1,3 @@
+- [ ] Add opt-in native contact picker; no manual phone-number entry or silent device read.
+- [ ] Store only user-selected contact details privately and show them to the owner behind the private access code.
+- [ ] Verify entry flow, contact-sharing fallback, and current build; finish the required package security update.
