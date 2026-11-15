@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -230,6 +230,38 @@ export type Database = {
             foreignKeyName: "push_subscriptions_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_contacts: {
+        Row: {
+          consented_at: string
+          contact_name: string | null
+          conversation_id: string
+          created_at: string
+          phone: string
+        }
+        Insert: {
+          consented_at?: string
+          contact_name?: string | null
+          conversation_id: string
+          created_at?: string
+          phone: string
+        }
+        Update: {
+          consented_at?: string
+          contact_name?: string | null
+          conversation_id?: string
+          created_at?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_contacts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
             referencedRelation: "conversations"
             referencedColumns: ["id"]
           },

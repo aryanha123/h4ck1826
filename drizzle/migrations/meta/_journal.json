@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794729574508,
+      "tag": "0000_add_private_visitor_contacts",
+      "breakpoints": true
+    }
+  ]
+}
