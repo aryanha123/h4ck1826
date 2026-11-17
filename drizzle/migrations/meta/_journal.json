@@ -8,6 +8,13 @@
       "when": 1794729574508,
       "tag": "0000_add_private_visitor_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794886022143,
+      "tag": "0001_add_couple_rooms_and_passkeys",
+      "breakpoints": true
     }
   ]
 }

@@ -134,6 +134,7 @@ export type Database = {
           media_url: string | null
           seen_at: string | null
           sender: string
+          sender_name: string | null
         }
         Insert: {
           content: string
@@ -145,6 +146,7 @@ export type Database = {
           media_url?: string | null
           seen_at?: string | null
           sender: string
+          sender_name?: string | null
         }
         Update: {
           content?: string
@@ -156,6 +158,7 @@ export type Database = {
           media_url?: string | null
           seen_at?: string | null
           sender?: string
+          sender_name?: string | null
         }
         Relationships: [
           {
@@ -170,24 +173,99 @@ export type Database = {
       panels: {
         Row: {
           code: string
+          couple_slot: number | null
           created_at: string
           id: string
           label: string
+          participant_one: string | null
+          participant_two: string | null
           password: string
         }
         Insert: {
           code: string
+          couple_slot?: number | null
           created_at?: string
           id?: string
           label?: string
+          participant_one?: string | null
+          participant_two?: string | null
           password: string
         }
         Update: {
           code?: string
+          couple_slot?: number | null
           created_at?: string
           id?: string
           label?: string
+          participant_one?: string | null
+          participant_two?: string | null
           password?: string
+        }
+        Relationships: []
+      }
+      passkey_challenges: {
+        Row: {
+          challenge: string
+          challenge_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          participant_slot: number
+          room_slot: number
+        }
+        Insert: {
+          challenge: string
+          challenge_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          participant_slot: number
+          room_slot: number
+        }
+        Update: {
+          challenge?: string
+          challenge_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          participant_slot?: number
+          room_slot?: number
+        }
+        Relationships: []
+      }
+      passkey_credentials: {
+        Row: {
+          backed_up: boolean
+          counter: number
+          created_at: string
+          device_type: string
+          id: string
+          participant_slot: number
+          public_key: string
+          room_slot: number
+          transports: string[]
+        }
+        Insert: {
+          backed_up?: boolean
+          counter?: number
+          created_at?: string
+          device_type?: string
+          id: string
+          participant_slot: number
+          public_key: string
+          room_slot: number
+          transports?: string[]
+        }
+        Update: {
+          backed_up?: boolean
+          counter?: number
+          created_at?: string
+          device_type?: string
+          id?: string
+          participant_slot?: number
+          public_key?: string
+          room_slot?: number
+          transports?: string[]
         }
         Relationships: []
       }
