@@ -1,3 +1,6 @@
 - [ ] Add opt-in native contact picker; no manual phone-number entry or silent device read.
 - [ ] Store only user-selected contact details privately and show them to the owner behind a private access code.
 - [ ] Verify entry flow, contact-sharing fallback, and current build; finish the required package security update.
+- [ ] Add five admin-managed couple rooms with shared codes and distinct participant names.
+- [ ] Add consentful device-passkey login for each participant; never capture or store face images.
+- [ ] Increase voice recordings to three minutes and verify the chat/login flow.
