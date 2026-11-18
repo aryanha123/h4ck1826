@@ -5,7 +5,7 @@ const BUCKET = "chat-media";
 const SIGN_FOR = 60 * 60 * 24 * 3650;
 
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
-export const MAX_VOICE_SECONDS = 60;
+export const MAX_VOICE_SECONDS = 180;
 
 /** Uploads a photo / voice note and returns a long-lived signed link. */
 export async function uploadMedia(file: Blob, ext: string, contentType: string) {

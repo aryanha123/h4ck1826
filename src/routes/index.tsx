@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuraAudio } from "@/components/AuraAudio";
 import { GhostRain } from "@/components/GhostRain";
 import { Splash } from "@/components/Splash";
 import { InstallApp } from "@/components/InstallApp";
@@ -46,6 +45,7 @@ const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
 const PANEL_KEY = "h4ck-panel";
 const GUEST_CODE_KEY = "h4ck-guest-code";
+const COUPLE_ROOM_KEY = "h4ck-couple-room";
 /** Per-thread capacity. Beyond this the oldest messages roll off automatically. */
 const MAX_MESSAGES = 4000;
 const TRIM_TO = 3000;
@@ -57,6 +57,7 @@ type Message = {
   id: string;
   conversation_id: string;
   sender: Sender;
+  sender_name?: string | null;
   content: string;
   kind: MessageKind;
   media_url: string | null;
@@ -74,7 +75,16 @@ type Conversation = {
   guest_last_open: string | null;
   owner_last_open: string | null;
 };
-type Panel = { id: string; code: string; password: string; label: string; created_at: string };
+type Panel = {
+  id: string;
+  code: string;
+  password: string;
+  label: string;
+  created_at: string;
+  couple_slot: number | null;
+  participant_one: string | null;
+  participant_two: string | null;
+};
 
 const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
 const initials = (n: string) =>
@@ -102,6 +112,7 @@ function Index() {
   const [mode, setMode] = useState<"gate" | "guest" | "owner">("gate");
   const [name, setName] = useState("");
   const [guestCode, setGuestCode] = useState<string | null>(null);
+  const [coupleRoom, setCoupleRoom] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
 
   useEffect(() => {
@@ -119,6 +130,7 @@ function Index() {
     } else if (saved) {
       setName(saved);
       setGuestCode(window.localStorage.getItem(GUEST_CODE_KEY));
+      setCoupleRoom(window.localStorage.getItem(COUPLE_ROOM_KEY) === "yes");
       setMode("guest");
     }
     setReady(true);
@@ -133,13 +145,16 @@ function Index() {
     setMode("owner");
   };
 
-  const enterGuest = (raw: string, code: string | null) => {
+  const enterGuest = (raw: string, code: string | null, isCoupleRoom: boolean) => {
     const clean = raw.trim().replace(/\s+/g, " ");
     window.localStorage.setItem(STORE_KEY, clean);
     if (code) window.localStorage.setItem(GUEST_CODE_KEY, code);
     else window.localStorage.removeItem(GUEST_CODE_KEY);
+    if (isCoupleRoom) window.localStorage.setItem(COUPLE_ROOM_KEY, "yes");
+    else window.localStorage.removeItem(COUPLE_ROOM_KEY);
     setName(clean);
     setGuestCode(code);
+    setCoupleRoom(isCoupleRoom);
     setMode("guest");
   };
 
@@ -147,6 +162,7 @@ function Index() {
     window.localStorage.removeItem(STORE_KEY);
     window.localStorage.removeItem(PANEL_KEY);
     window.localStorage.removeItem(GUEST_CODE_KEY);
+    window.localStorage.removeItem(COUPLE_ROOM_KEY);
     setName("");
     setPanel(null);
     setMode("gate");
@@ -155,7 +171,6 @@ function Index() {
   return (
     <>
       <Splash />
-      <AuraAudio />
       <div className="fixed inset-0 -z-10 grid-aura opacity-70" aria-hidden="true" />
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div className="anim-aura absolute -left-24 top-[-10%] h-[46vh] w-[46vh] rounded-full bg-[oklch(0.68_0.24_300/25%)] blur-[90px]" />
@@ -176,7 +191,7 @@ function Index() {
       ) : mode === "owner" ? (
         <OwnerConsole onExit={exit} panel={panel} />
       ) : (
-        <GuestChat name={name} code={guestCode} onExit={exit} />
+        <GuestChat name={name} code={guestCode} coupleRoom={coupleRoom} onExit={exit} />
       )}
     </>
   );
@@ -186,7 +201,7 @@ function Gate({
   onGuest,
   onOwner,
 }: {
-  onGuest: (name: string, code: string | null) => void;
+  onGuest: (name: string, code: string | null, coupleRoom: boolean) => void;
   onOwner: (panel: Panel | null) => void;
 }) {
   const [value, setValue] = useState("");
@@ -219,10 +234,11 @@ function Gate({
     }
     const clean = code.trim();
     let joinCode: string | null = null;
+    let isCoupleRoom = false;
     if (clean) {
       const { data: p } = await supabase
         .from("panels")
-        .select("code")
+        .select("code, participant_one, participant_two")
         .eq("code", clean)
         .maybeSingle();
       if (!p) {
@@ -230,10 +246,20 @@ function Gate({
         setError("That code does not exist.");
         return;
       }
+      const first = p.participant_one?.trim();
+      const second = p.participant_two?.trim();
+      if (first && second) {
+        if (keyOf(v) !== keyOf(first) && keyOf(v) !== keyOf(second)) {
+          setBusy(false);
+          setError("यह नाम इस couple code के साथ सेट नहीं है।");
+          return;
+        }
+        isCoupleRoom = true;
+      }
       joinCode = clean;
     }
     setBusy(false);
-    onGuest(v, joinCode);
+    onGuest(v, joinCode, isCoupleRoom);
   };
 
   return (
@@ -299,13 +325,13 @@ function Gate({
             <input
               id="gate-code"
               value={code}
-              maxLength={4}
+              maxLength={8}
               inputMode="numeric"
               onChange={(e) => {
                 setCode(e.target.value.trim());
                 setError("");
               }}
-              placeholder="code"
+              placeholder="couple code"
               aria-label="Panel code (optional)"
               className="w-20 rounded-2xl border border-border bg-input px-3 py-3.5 text-center font-[family-name:var(--font-mono)] text-lg outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/30"
             />
@@ -319,7 +345,7 @@ function Gate({
             {busy ? "Opening…" : "Open the line"}
           </button>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Same name reopens your old chat. Code is optional — only use it if someone gave you one.
+            Couple members enter the same code with their own saved name to share one chat.
           </p>
         </form>
         <div className="mt-6 flex justify-center">
@@ -433,10 +459,12 @@ function BubbleBody({ m, mine }: { m: Message; mine: boolean }) {
 function Thread({
   messages,
   mineIs,
+  mineName,
   notice,
 }: {
   messages: Message[];
   mineIs: Sender;
+  mineName?: string;
   notice?: string | null;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -459,7 +487,7 @@ function Thread({
         </p>
       )}
       {messages.map((m) => {
-        const mine = m.sender === mineIs;
+        const mine = mineName ? keyOf(m.sender_name ?? "") === keyOf(mineName) : m.sender === mineIs;
         return (
           <div key={m.id} className={`flex anim-drop ${mine ? "justify-end" : "justify-start"}`}>
             <div
@@ -467,6 +495,11 @@ function Thread({
                 mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md"
               } ${m.kind === "photo" ? "px-1.5 py-1.5" : ""}`}
             >
+              {m.sender_name && (
+                <p className={`mb-1 text-[10px] font-medium ${mine ? "opacity-75" : "text-muted-foreground"}`}>
+                  {m.sender_name}
+                </p>
+              )}
               <BubbleBody m={m} mine={mine} />
               <p
                 className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
@@ -604,12 +637,13 @@ function useThread(conversationId: string | null, mineIs: Sender) {
   return { messages, setMessages, notice, setNotice };
 }
 
-async function sendMessage(conversationId: string, sender: Sender, out: Outgoing) {
+async function sendMessage(conversationId: string, sender: Sender, out: Outgoing, senderName?: string) {
   const { data } = await supabase
     .from("messages")
     .insert({
       conversation_id: conversationId,
       sender,
+      sender_name: senderName ?? null,
       content: out.kind === "text" ? out.content : "",
       kind: out.kind,
       media_url: out.kind === "text" ? null : out.mediaUrl,
@@ -639,10 +673,12 @@ function replaceOptimistic(
 function GuestChat({
   name,
   code,
+  coupleRoom,
   onExit,
 }: {
   name: string;
   code: string | null;
+  coupleRoom: boolean;
   onExit: () => void;
 }) {
   const [convoId, setConvoId] = useState<string | null>(null);
@@ -666,6 +702,39 @@ function GuestChat({
     let active = true;
     const key = keyOf(name);
     (async () => {
+      if (coupleRoom && code) {
+        const { data: room } = await supabase
+          .from("panels")
+          .select("participant_one, participant_two")
+          .eq("code", code)
+          .maybeSingle();
+        const first = room?.participant_one?.trim();
+        const second = room?.participant_two?.trim();
+        if (!first || !second || (keyOf(name) !== keyOf(first) && keyOf(name) !== keyOf(second))) return;
+        const roomKey = `couple:${code}`;
+        const { data: roomConversation } = await supabase
+          .from("conversations")
+          .select("*")
+          .eq("name_key", roomKey)
+          .maybeSingle();
+        if (roomConversation) {
+          if (!active) return;
+          setConvoId(roomConversation.id);
+          setOwnerSeen((roomConversation as Conversation).owner_last_open);
+          await supabase
+            .from("conversations")
+            .update({ guest_last_open: new Date().toISOString() })
+            .eq("id", roomConversation.id);
+          return;
+        }
+        const { data: createdRoom } = await supabase
+          .from("conversations")
+          .insert({ name: `${first} & ${second}`, name_key: roomKey, panel_code: code })
+          .select()
+          .maybeSingle();
+        if (createdRoom && active) setConvoId(createdRoom.id);
+        return;
+      }
       const { data: existing } = await supabase
         .from("conversations")
         .select("*")
@@ -698,7 +767,7 @@ function GuestChat({
     return () => {
       active = false;
     };
-  }, [name, code]);
+  }, [name, code, coupleRoom]);
 
   const send = useCallback(
     async (out: Outgoing) => {
@@ -708,6 +777,7 @@ function GuestChat({
         id: tmpId,
         conversation_id: convoId,
         sender: "guest",
+        sender_name: coupleRoom ? name : null,
         content: out.kind === "text" ? out.content : "",
         kind: out.kind,
         media_url: out.kind === "text" ? null : out.mediaUrl,
@@ -716,19 +786,19 @@ function GuestChat({
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(convoId, "guest", out);
+      const row = await sendMessage(convoId, "guest", out, coupleRoom ? name : undefined);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: convoId, from: "guest", kind: "message", panelCode: code },
       }).catch(() => {});
     },
-    [convoId, code, setMessages],
+    [convoId, code, coupleRoom, name, setMessages],
   );
 
   return (
     <Shell
       title="HAROON H4CK"
-      subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
+      subtitle={ownerSeen ? ago(ownerSeen) : coupleRoom ? `Couple chat · ${name}` : `You are ${name}`}
       left={
         <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
           <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
@@ -741,7 +811,7 @@ function GuestChat({
       }
       footer={<Composer onSend={send} disabled={!convoId} maxChars={MAX_CHARS} />}
     >
-      <Thread messages={messages} mineIs="guest" notice={notice} />
+      <Thread messages={messages} mineIs="guest" mineName={coupleRoom ? name : undefined} notice={notice} />
     </Shell>
   );
 }

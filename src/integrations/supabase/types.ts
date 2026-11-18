@@ -123,6 +123,45 @@ export type Database = {
         }
         Relationships: []
       }
+      couple_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          media_duration: number | null
+          media_url: string | null
+          room_slot: number
+          seen_at: string | null
+          sender_name: string
+          sender_slot: number
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          media_duration?: number | null
+          media_url?: string | null
+          room_slot: number
+          seen_at?: string | null
+          sender_name: string
+          sender_slot: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          media_duration?: number | null
+          media_url?: string | null
+          room_slot?: number
+          seen_at?: string | null
+          sender_name?: string
+          sender_slot?: number
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -240,6 +279,7 @@ export type Database = {
           created_at: string
           device_type: string
           id: string
+          identity_key: string | null
           participant_slot: number
           public_key: string
           room_slot: number
@@ -251,6 +291,7 @@ export type Database = {
           created_at?: string
           device_type?: string
           id: string
+          identity_key?: string | null
           participant_slot: number
           public_key: string
           room_slot: number
@@ -262,10 +303,38 @@ export type Database = {
           created_at?: string
           device_type?: string
           id?: string
+          identity_key?: string | null
           participant_slot?: number
           public_key?: string
           room_slot?: number
           transports?: string[]
+        }
+        Relationships: []
+      }
+      passkey_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          identity_key: string
+          participant_slot: number
+          room_slot: number
+          session_token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          identity_key: string
+          participant_slot: number
+          room_slot: number
+          session_token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          identity_key?: string
+          participant_slot?: number
+          room_slot?: number
+          session_token_hash?: string
         }
         Relationships: []
       }

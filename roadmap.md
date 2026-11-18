@@ -4,3 +4,5 @@
 - [ ] Add five admin-managed couple rooms with shared codes and distinct participant names.
 - [ ] Add consentful device-passkey login for each participant; never capture or store face images.
 - [ ] Increase voice recordings to three minutes and verify the chat/login flow.
+- [ ] Remove background songs from the site.
+- [ ] Keep face lock/passkey login out of the app, per user request.
