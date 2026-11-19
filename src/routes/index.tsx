@@ -18,6 +18,7 @@ import { Composer, type Outgoing } from "@/components/Composer";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { enablePush, askNotificationPermission, registerServiceWorker, vibrate } from "@/lib/pwa";
 import { sendPushNotice } from "@/lib/notify.functions";
+import { Switch } from "@/components/ui/switch";
 import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -45,7 +46,6 @@ const OWNER_CODE = "haroonha754@gmail.com";
 const STORE_KEY = "nocturne-name";
 const PANEL_KEY = "h4ck-panel";
 const GUEST_CODE_KEY = "h4ck-guest-code";
-const COUPLE_ROOM_KEY = "h4ck-couple-room";
 /** Per-thread capacity. Beyond this the oldest messages roll off automatically. */
 const MAX_MESSAGES = 4000;
 const TRIM_TO = 3000;
@@ -84,6 +84,7 @@ type Panel = {
   couple_slot: number | null;
   participant_one: string | null;
   participant_two: string | null;
+  private_mode: boolean;
 };
 
 const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
@@ -112,7 +113,6 @@ function Index() {
   const [mode, setMode] = useState<"gate" | "guest" | "owner">("gate");
   const [name, setName] = useState("");
   const [guestCode, setGuestCode] = useState<string | null>(null);
-  const [coupleRoom, setCoupleRoom] = useState(false);
   const [panel, setPanel] = useState<Panel | null>(null);
 
   useEffect(() => {
@@ -130,7 +130,6 @@ function Index() {
     } else if (saved) {
       setName(saved);
       setGuestCode(window.localStorage.getItem(GUEST_CODE_KEY));
-      setCoupleRoom(window.localStorage.getItem(COUPLE_ROOM_KEY) === "yes");
       setMode("guest");
     }
     setReady(true);
@@ -145,16 +144,13 @@ function Index() {
     setMode("owner");
   };
 
-  const enterGuest = (raw: string, code: string | null, isCoupleRoom: boolean) => {
+  const enterGuest = (raw: string, code: string | null) => {
     const clean = raw.trim().replace(/\s+/g, " ");
     window.localStorage.setItem(STORE_KEY, clean);
     if (code) window.localStorage.setItem(GUEST_CODE_KEY, code);
     else window.localStorage.removeItem(GUEST_CODE_KEY);
-    if (isCoupleRoom) window.localStorage.setItem(COUPLE_ROOM_KEY, "yes");
-    else window.localStorage.removeItem(COUPLE_ROOM_KEY);
     setName(clean);
     setGuestCode(code);
-    setCoupleRoom(isCoupleRoom);
     setMode("guest");
   };
 
@@ -162,7 +158,6 @@ function Index() {
     window.localStorage.removeItem(STORE_KEY);
     window.localStorage.removeItem(PANEL_KEY);
     window.localStorage.removeItem(GUEST_CODE_KEY);
-    window.localStorage.removeItem(COUPLE_ROOM_KEY);
     setName("");
     setPanel(null);
     setMode("gate");
@@ -191,7 +186,7 @@ function Index() {
       ) : mode === "owner" ? (
         <OwnerConsole onExit={exit} panel={panel} />
       ) : (
-        <GuestChat name={name} code={guestCode} coupleRoom={coupleRoom} onExit={exit} />
+        <GuestChat name={name} code={guestCode} onExit={exit} />
       )}
     </>
   );
@@ -201,7 +196,7 @@ function Gate({
   onGuest,
   onOwner,
 }: {
-  onGuest: (name: string, code: string | null, coupleRoom: boolean) => void;
+  onGuest: (name: string, code: string | null) => void;
   onOwner: (panel: Panel | null) => void;
 }) {
   const [value, setValue] = useState("");
@@ -234,11 +229,10 @@ function Gate({
     }
     const clean = code.trim();
     let joinCode: string | null = null;
-    let isCoupleRoom = false;
     if (clean) {
       const { data: p } = await supabase
         .from("panels")
-        .select("code, participant_one, participant_two")
+        .select("code")
         .eq("code", clean)
         .maybeSingle();
       if (!p) {
@@ -246,27 +240,17 @@ function Gate({
         setError("That code does not exist.");
         return;
       }
-      const first = p.participant_one?.trim();
-      const second = p.participant_two?.trim();
-      if (first && second) {
-        if (keyOf(v) !== keyOf(first) && keyOf(v) !== keyOf(second)) {
-          setBusy(false);
-          setError("यह नाम इस couple code के साथ सेट नहीं है।");
-          return;
-        }
-        isCoupleRoom = true;
-      }
       joinCode = clean;
     }
     setBusy(false);
-    onGuest(v, joinCode, isCoupleRoom);
+    onGuest(v, joinCode);
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-5">
+    <main className="flex min-h-dvh items-center justify-center px-4 py-6 sm:px-5">
       <div className="w-full max-w-md anim-rise">
         <div className="flex justify-center">
-          <span className="anim-pulse-ring neon-ring relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-border bg-foreground/5 backdrop-blur-xl">
+          <span className="anim-pulse-ring neon-ring relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl sm:h-24 sm:w-24 sm:rounded-3xl">
             <img
               src={dp.url}
               alt="HAROON H4CK profile"
@@ -275,11 +259,11 @@ function Gate({
             />
           </span>
         </div>
-        <h1 className="anim-glitch-in mt-8 text-center font-[family-name:var(--font-mono)] text-4xl font-semibold uppercase tracking-[0.22em] text-sheen">
+        <h1 className="anim-glitch-in mt-6 text-center font-[family-name:var(--font-mono)] text-3xl font-semibold uppercase tracking-[0.12em] text-sheen sm:mt-8 sm:text-4xl sm:tracking-[0.22em]">
           HAROON H4CK
         </h1>
         <p
-          className="anim-rise mt-3 text-center font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-[0.3em] text-muted-foreground"
+          className="anim-rise mt-3 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:text-[11px] sm:tracking-[0.3em]"
           style={{ animationDelay: "260ms" }}
         >
           encrypted direct line // chat + audio call
@@ -300,7 +284,7 @@ function Gate({
 
         <form
           onSubmit={submit}
-          className="glass-panel anim-drop mt-10 rounded-3xl p-6"
+          className="glass-panel anim-drop mt-7 rounded-2xl p-4 sm:mt-10 sm:rounded-3xl sm:p-6"
           style={{ animationDelay: "120ms" }}
         >
           <label
@@ -309,7 +293,7 @@ function Gate({
           >
             your name
           </label>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_5rem] gap-2 sm:flex">
             <input
               id="gate-name"
               autoFocus
@@ -320,7 +304,7 @@ function Gate({
                 setError("");
               }}
               placeholder="type your name…"
-              className="min-w-0 flex-1 rounded-2xl border border-border bg-input px-4 py-3.5 text-lg outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/30"
+              className="min-w-0 rounded-xl border border-border bg-input px-3 py-3 text-base outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/30 sm:flex-1 sm:rounded-2xl sm:px-4 sm:py-3.5 sm:text-lg"
             />
             <input
               id="gate-code"
@@ -331,21 +315,21 @@ function Gate({
                 setCode(e.target.value.trim());
                 setError("");
               }}
-              placeholder="couple code"
+              placeholder="code"
               aria-label="Panel code (optional)"
-              className="w-20 rounded-2xl border border-border bg-input px-3 py-3.5 text-center font-[family-name:var(--font-mono)] text-lg outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/30"
+              className="w-full rounded-xl border border-border bg-input px-2 py-3 text-center font-[family-name:var(--font-mono)] text-base outline-none transition focus:border-foreground/50 focus:ring-2 focus:ring-ring/30 sm:w-24 sm:rounded-2xl sm:px-3 sm:py-3.5 sm:text-lg"
             />
           </div>
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           <button
             type="submit"
             disabled={busy}
-            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3.5 font-medium text-primary-foreground transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+            className="mt-4 w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50 sm:rounded-2xl sm:py-3.5"
           >
             {busy ? "Opening…" : "Open the line"}
           </button>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Couple members enter the same code with their own saved name to share one chat.
+            Enter your name to continue. Add a panel code if you were given one.
           </p>
         </form>
         <div className="mt-6 flex justify-center">
@@ -386,7 +370,7 @@ function Shell({
         top: vh.top ? `${vh.top}px` : 0,
       }}
     >
-      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card/60 px-4 py-3 backdrop-blur-xl">
+      <header className="flex shrink-0 items-center gap-2 border-b border-border bg-card/60 px-3 py-2.5 backdrop-blur-xl sm:gap-3 sm:px-4 sm:py-3">
         {left}
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-[family-name:var(--font-mono)] text-base tracking-[0.2em] lowercase">
@@ -473,7 +457,7 @@ function Thread({
   }, [messages.length]);
 
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-6">
+    <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 sm:py-6">
       {notice && (
         <div className="anim-soft-in glass-panel mx-auto mb-2 max-w-[92%] rounded-2xl px-4 py-2.5 text-center">
           <p className="font-[family-name:var(--font-mono)] text-[10px] uppercase leading-relaxed tracking-[0.18em] text-muted-foreground">
@@ -487,19 +471,14 @@ function Thread({
         </p>
       )}
       {messages.map((m) => {
-        const mine = mineName ? keyOf(m.sender_name ?? "") === keyOf(mineName) : m.sender === mineIs;
+        const mine = m.sender === mineIs;
         return (
           <div key={m.id} className={`flex anim-drop ${mine ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] rounded-3xl px-4 py-2.5 ${
+              className={`max-w-[88%] rounded-2xl px-3 py-2 sm:max-w-[80%] sm:rounded-3xl sm:px-4 sm:py-2.5 ${
                 mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md"
               } ${m.kind === "photo" ? "px-1.5 py-1.5" : ""}`}
             >
-              {m.sender_name && (
-                <p className={`mb-1 text-[10px] font-medium ${mine ? "opacity-75" : "text-muted-foreground"}`}>
-                  {m.sender_name}
-                </p>
-              )}
               <BubbleBody m={m} mine={mine} />
               <p
                 className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
@@ -673,12 +652,10 @@ function replaceOptimistic(
 function GuestChat({
   name,
   code,
-  coupleRoom,
   onExit,
 }: {
   name: string;
   code: string | null;
-  coupleRoom: boolean;
   onExit: () => void;
 }) {
   const [convoId, setConvoId] = useState<string | null>(null);
@@ -702,39 +679,6 @@ function GuestChat({
     let active = true;
     const key = keyOf(name);
     (async () => {
-      if (coupleRoom && code) {
-        const { data: room } = await supabase
-          .from("panels")
-          .select("participant_one, participant_two")
-          .eq("code", code)
-          .maybeSingle();
-        const first = room?.participant_one?.trim();
-        const second = room?.participant_two?.trim();
-        if (!first || !second || (keyOf(name) !== keyOf(first) && keyOf(name) !== keyOf(second))) return;
-        const roomKey = `couple:${code}`;
-        const { data: roomConversation } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("name_key", roomKey)
-          .maybeSingle();
-        if (roomConversation) {
-          if (!active) return;
-          setConvoId(roomConversation.id);
-          setOwnerSeen((roomConversation as Conversation).owner_last_open);
-          await supabase
-            .from("conversations")
-            .update({ guest_last_open: new Date().toISOString() })
-            .eq("id", roomConversation.id);
-          return;
-        }
-        const { data: createdRoom } = await supabase
-          .from("conversations")
-          .insert({ name: `${first} & ${second}`, name_key: roomKey, panel_code: code })
-          .select()
-          .maybeSingle();
-        if (createdRoom && active) setConvoId(createdRoom.id);
-        return;
-      }
       const { data: existing } = await supabase
         .from("conversations")
         .select("*")
@@ -767,7 +711,7 @@ function GuestChat({
     return () => {
       active = false;
     };
-  }, [name, code, coupleRoom]);
+  }, [name, code]);
 
   const send = useCallback(
     async (out: Outgoing) => {
@@ -777,7 +721,6 @@ function GuestChat({
         id: tmpId,
         conversation_id: convoId,
         sender: "guest",
-        sender_name: coupleRoom ? name : null,
         content: out.kind === "text" ? out.content : "",
         kind: out.kind,
         media_url: out.kind === "text" ? null : out.mediaUrl,
@@ -786,19 +729,19 @@ function GuestChat({
         seen_at: null,
       };
       setMessages((prev) => [...prev, optimistic]);
-      const row = await sendMessage(convoId, "guest", out, coupleRoom ? name : undefined);
+      const row = await sendMessage(convoId, "guest", out);
       replaceOptimistic(setMessages, tmpId, row);
       void sendPushNotice({
         data: { conversationId: convoId, from: "guest", kind: "message", panelCode: code },
       }).catch(() => {});
     },
-    [convoId, code, coupleRoom, name, setMessages],
+    [convoId, code, setMessages],
   );
 
   return (
     <Shell
       title="HAROON H4CK"
-      subtitle={ownerSeen ? ago(ownerSeen) : coupleRoom ? `Couple chat · ${name}` : `You are ${name}`}
+      subtitle={ownerSeen ? ago(ownerSeen) : `You are ${name}`}
       left={
         <span className="neon-ring flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-foreground/5">
           <img src={dp.url} alt="HAROON H4CK" className="h-full w-full object-cover" />
@@ -811,7 +754,7 @@ function GuestChat({
       }
       footer={<Composer onSend={send} disabled={!convoId} maxChars={MAX_CHARS} />}
     >
-      <Thread messages={messages} mineIs="guest" mineName={coupleRoom ? name : undefined} notice={notice} />
+      <Thread messages={messages} mineIs="guest" notice={notice} />
     </Shell>
   );
 }

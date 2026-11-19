@@ -1,0 +1,1 @@
+ALTER TABLE public.panels ADD COLUMN private_mode boolean NOT NULL DEFAULT false;

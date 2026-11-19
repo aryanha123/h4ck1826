@@ -219,6 +219,7 @@ export type Database = {
           participant_one: string | null
           participant_two: string | null
           password: string
+          private_mode: boolean
         }
         Insert: {
           code: string
@@ -229,6 +230,7 @@ export type Database = {
           participant_one?: string | null
           participant_two?: string | null
           password: string
+          private_mode?: boolean
         }
         Update: {
           code?: string
@@ -239,6 +241,7 @@ export type Database = {
           participant_one?: string | null
           participant_two?: string | null
           password?: string
+          private_mode?: boolean
         }
         Relationships: []
       }
