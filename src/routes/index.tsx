@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Check,
   CheckCheck,
+  KeyRound,
   LogOut,
   MessageSquare,
   Plus,
@@ -19,6 +20,7 @@ import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { enablePush, askNotificationPermission, registerServiceWorker, vibrate } from "@/lib/pwa";
 import { sendPushNotice } from "@/lib/notify.functions";
 import { Switch } from "@/components/ui/switch";
+import { canReadPanelMessages } from "@/lib/panel-privacy";
 import dp from "@/assets/owner-dp.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -78,7 +80,6 @@ type Conversation = {
 type Panel = {
   id: string;
   code: string;
-  password: string;
   label: string;
   created_at: string;
   couple_slot: number | null;
@@ -121,7 +122,9 @@ function Index() {
     if (saved === OWNER_CODE) {
       if (savedPanel) {
         try {
-          setPanel(JSON.parse(savedPanel) as Panel);
+          const restoredPanel = JSON.parse(savedPanel) as Panel;
+          setPanel(restoredPanel);
+          window.localStorage.setItem(PANEL_KEY, JSON.stringify(restoredPanel));
         } catch {
           /* ignore */
         }
@@ -219,12 +222,12 @@ function Gate({
     // a sub-panel password opens that panel's console
     const { data: asPanel } = await supabase
       .from("panels")
-      .select("*")
+      .select("id, code, label, created_at, couple_slot, participant_one, participant_two, private_mode")
       .eq("password", v)
       .maybeSingle();
     if (asPanel) {
       setBusy(false);
-      onOwner(asPanel as Panel);
+      onOwner(asPanel);
       return;
     }
     const clean = code.trim();
@@ -443,12 +446,10 @@ function BubbleBody({ m, mine }: { m: Message; mine: boolean }) {
 function Thread({
   messages,
   mineIs,
-  mineName,
   notice,
 }: {
   messages: Message[];
   mineIs: Sender;
-  mineName?: string;
   notice?: string | null;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -764,12 +765,13 @@ function PanelManager({ onClose }: { onClose: () => void }) {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
+  const [privateMode, setPrivateMode] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("panels")
-      .select("*")
+      .select("id, code, label, created_at, couple_slot, participant_one, participant_two, private_mode")
       .order("created_at", { ascending: false });
     setPanels((data ?? []) as Panel[]);
   }, []);
@@ -786,11 +788,17 @@ function PanelManager({ onClose }: { onClose: () => void }) {
     if (!/^\d{2}$/.test(c)) return setError("Code must be exactly 2 digits.");
     const { error: err } = await supabase
       .from("panels")
-      .insert({ password: p, code: c, label: label.trim() || `panel ${c}` });
+      .insert({
+        password: p,
+        code: c,
+        label: label.trim() || `panel ${c}`,
+        private_mode: privateMode,
+      });
     if (err) return setError("That code is already taken.");
     setPassword("");
     setCode("");
     setLabel("");
+    setPrivateMode(false);
     setError("");
     void load();
   };
@@ -803,7 +811,7 @@ function PanelManager({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-background/80 p-4 backdrop-blur-xl sm:items-center">
-      <div className="glass-panel anim-drop w-full max-w-md rounded-3xl p-6">
+      <div className="glass-panel anim-drop max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl p-4 sm:rounded-3xl sm:p-6">
         <div className="flex items-center justify-between">
           <h2 className="font-[family-name:var(--font-mono)] text-sm uppercase tracking-[0.25em]">
             admin panels
@@ -820,6 +828,8 @@ function PanelManager({ onClose }: { onClose: () => void }) {
             className="w-full rounded-2xl border border-border bg-input px-4 py-3 outline-none focus:border-foreground/50"
           />
           <input
+            type="password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="panel password"
@@ -833,6 +843,19 @@ function PanelManager({ onClose }: { onClose: () => void }) {
             placeholder="2-digit code"
             className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-center font-[family-name:var(--font-mono)] outline-none focus:border-foreground/50"
           />
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-3">
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">Private panel</span>
+              <span className="block text-xs text-muted-foreground">
+                Show chat names and activity only, never messages
+              </span>
+            </span>
+            <Switch
+              checked={privateMode}
+              onCheckedChange={setPrivateMode}
+              aria-label="Private panel"
+            />
+          </label>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button
             type="submit"
@@ -854,7 +877,7 @@ function PanelManager({ onClose }: { onClose: () => void }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{p.label}</p>
                 <p className="truncate font-[family-name:var(--font-mono)] text-[11px] text-muted-foreground">
-                  code {p.code} · pass {p.password}
+                  code {p.code} · {p.private_mode ? "private summary" : "chat access"}
                 </p>
               </div>
               <IconButton onClick={() => remove(p.id)} label="Delete panel" danger>
@@ -864,9 +887,7 @@ function PanelManager({ onClose }: { onClose: () => void }) {
           ))}
         </div>
         <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-          Give the password to your friend — they enter it on the home screen to open their own
-          panel. Anyone typing the 2-digit code next to their name lands in that panel (you still
-          see everything).
+          Share each panel password privately. Passwords cannot be viewed again after creation.
         </p>
       </div>
     </div>
@@ -877,7 +898,11 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showPanels, setShowPanels] = useState(false);
-  const { messages, setMessages, notice } = useThread(activeId, "owner");
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const { messages, setMessages, notice } = useThread(
+    canReadPanelMessages(panel?.private_mode) ? activeId : null,
+    "owner",
+  );
 
   useEffect(() => {
     void askNotificationPermission();
@@ -896,8 +921,9 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
 
     const channel = supabase
       .channel(`owner-inbox-${panel?.code ?? "master"}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load)
-      .on(
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, load);
+    if (canReadPanelMessages(panel?.private_mode)) {
+      channel.on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
@@ -905,8 +931,9 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
           if (msg.sender === "guest") vibrate();
           void load();
         },
-      )
-      .subscribe();
+      );
+    }
+    channel.subscribe();
 
     return () => {
       active = false;
@@ -915,17 +942,19 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   }, [panel]);
 
   const activeConvo = useMemo(
-    () => convos.find((c) => c.id === activeId) ?? null,
+    () =>
+      (canReadPanelMessages(panel?.private_mode) ? convos.find((c) => c.id === activeId) : null) ??
+      null,
     [convos, activeId],
   );
 
   useEffect(() => {
-    if (!activeId) return;
+    if (!activeId || panel?.private_mode) return;
     void supabase
       .from("conversations")
       .update({ owner_last_open: new Date().toISOString() })
       .eq("id", activeId);
-  }, [activeId]);
+  }, [activeId, panel?.private_mode]);
 
   const deleteThread = useCallback(async (id: string, label: string) => {
     if (!window.confirm(`Delete the whole chat with ${label}? This cannot be undone.`)) return;
@@ -989,6 +1018,9 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
   return (
     <>
       {showPanels && <PanelManager onClose={() => setShowPanels(false)} />}
+      {showPasswordChange && panel && (
+        <PanelPasswordChange panel={panel} onClose={() => setShowPasswordChange(false)} />
+      )}
       <Shell
         title={panel ? panel.label : "Inbox"}
         subtitle={`${convos.length} thread${convos.length === 1 ? "" : "s"}${
@@ -1001,6 +1033,11 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
         }
         right={
           <div className="flex items-center">
+            {panel && (
+              <IconButton onClick={() => setShowPasswordChange(true)} label="Change password">
+                <KeyRound className="h-5 w-5" />
+              </IconButton>
+            )}
             {!panel && (
               <IconButton onClick={() => setShowPanels(true)} label="Admin panels">
                 <Plus className="h-5 w-5" />
@@ -1025,7 +1062,10 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
               className="anim-rise flex w-full items-center gap-2 rounded-2xl border border-border bg-card/40 px-3 py-3 backdrop-blur-xl transition hover:border-foreground/40 hover:bg-card/70"
             >
               <button
-                onClick={() => setActiveId(c.id)}
+                onClick={() => {
+                  if (!panel?.private_mode) setActiveId(c.id);
+                }}
+                disabled={panel?.private_mode}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-foreground/5 font-[family-name:var(--font-mono)] text-xs">
@@ -1045,9 +1085,11 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
                   </span>
                 </span>
               </button>
-              <IconButton onClick={() => deleteThread(c.id, c.name)} label="Delete chat" danger>
-                <Trash2 className="h-4 w-4" />
-              </IconButton>
+              {!panel?.private_mode && (
+                <IconButton onClick={() => deleteThread(c.id, c.name)} label="Delete chat" danger>
+                  <Trash2 className="h-4 w-4" />
+                </IconButton>
+              )}
             </div>
           ))}
           <div className="flex justify-center pt-4">
@@ -1059,5 +1101,94 @@ function OwnerConsole({ onExit, panel }: { onExit: () => void; panel: Panel | nu
         </div>
       </Shell>
     </>
+  );
+}
+
+function PanelPasswordChange({ panel, onClose }: { panel: Panel; onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const updatePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (newPassword.trim().length < 4) {
+      setError("New password must be at least 4 characters.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    const { data, error: updateError } = await supabase
+      .from("panels")
+      .update({ password: newPassword.trim() })
+      .eq("id", panel.id)
+      .eq("password", currentPassword)
+      .select("id")
+      .maybeSingle();
+    setSaving(false);
+    if (updateError || !data) {
+      setError("Current password is incorrect or the password could not be changed.");
+      return;
+    }
+    setCurrentPassword("");
+    setNewPassword("");
+    setSaved(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 p-4 backdrop-blur-xl sm:items-center">
+      <div className="glass-panel max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl p-4 sm:rounded-3xl sm:p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="font-[family-name:var(--font-mono)] text-sm uppercase tracking-[0.18em] sm:tracking-[0.25em]">
+            change panel password
+          </h2>
+          <IconButton onClick={onClose} label="Close">
+            <ArrowLeft className="h-5 w-5" />
+          </IconButton>
+        </div>
+        {saved ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-muted-foreground">Password changed. Keep it private.</p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground sm:rounded-2xl"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={updatePassword} className="mt-4 space-y-3">
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Current password"
+              aria-label="Current password"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 outline-none focus:border-foreground/50 sm:rounded-2xl"
+            />
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder="New password"
+              aria-label="New password"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 outline-none focus:border-foreground/50 sm:rounded-2xl"
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground disabled:opacity-50 sm:rounded-2xl"
+            >
+              {saving ? "Saving…" : "Save new password"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }

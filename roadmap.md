@@ -1,5 +1,5 @@
 - [x] Remove background songs from the site.
 - [x] Keep the existing admin and one-to-one chat setup; do not add five couple rooms.
-- [ ] Add an optional private panel mode that shows chat names and activity times, never messages.
+- [x] Add an optional private panel mode that shows chat names and activity times, never messages.
+- [x] Add a current-password-verified panel password change; never reveal saved passwords.
 - [ ] Check the existing screens on a phone-sized display.
-- [ ] Do not reveal panel passwords; safe password changes need protected account authentication first.

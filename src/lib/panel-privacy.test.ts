@@ -1,12 +1,13 @@
-import { describe, expect, it } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { canReadPanelMessages } from "./panel-privacy";
 
 describe("private panel message visibility", () => {
   it("lets a regular panel read its chats", () => {
-    expect(canReadPanelMessages(false)).toBe(true);
+    assert.equal(canReadPanelMessages(false), true);
   });
 
   it("hides chat messages in private summary mode", () => {
-    expect(canReadPanelMessages(true)).toBe(false);
+    assert.equal(canReadPanelMessages(true), false);
   });
 });

@@ -11,3 +11,6 @@
 
 ## Contact privacy
 - Store visitor-shared phone numbers in a service-role-only table and expose reads only through server functions that validate a dedicated secret, so public chat access never grants access to contact details.
+
+## Panel privacy
+- Store private-summary mode per panel; private panels may list conversation names and activity but must not fetch or subscribe to message rows.
